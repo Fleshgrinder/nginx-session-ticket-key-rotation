@@ -41,47 +41,28 @@ source $(pwd)/config.sh
 
 if [ -d "${TMPFS_PATH}" ]
 then
-  echo "Aborting: directory ${TMPFS_PATH} already exists."
-  exit 1
-else
-  # Create mount point for temporary file system.
-  mkdir "${TMPFS_PATH}"
+  # Unmount the temporary file system and delete the directory and all keys.
+  umount ${TMPFS_PATH}
+  rm -rf ${TMPFS_PATH}
+  echo "You need to edit your nginx configuration and remove all references to used"
+  echo "session ticket keys and reload the service afterwards."
 
-  # Apply very permissive permissions.
-  chmod 770 "${TMPFS_PATH}"
+  # Remove previously created fstab entry. Note that we use @ as delimiter and
+  # avoid escaping of the path variable which contains slashes.
+  sed '\@^tmpfs ${TMPFS_PATH}@ d' /etc/fstab > /etc/fstab
 
-  # Mount temporary file system and precise it's size.
-  #
-  # TODO: Check if ramfs is available and use it instead of tmpfs (swap).
-  mount -t tmpfs -o mode=770 tmpfs ${TMPFS_PATH}
-
-  # Automatically create temporary file system on start up in the future.
-  echo $'\n'"none ${TMPFS_PATH} ramfs defaults,mode=770 0 0"$'\n' >> /etc/fstab
-
-  # Generate session ticket key for encryption and fake decrypt files.
-  sh "$(pwd)/${GENERATOR}.sh"
-
-  echo "Please add the following lines to your nginx configuration:"$'\n'
-  for SERVER in ${SERVER_COUNT}
-  do
-    echo "Server ${SERVER}:"
-    for KEY in 1 2 3
-    do
-      echo "    ssl_session_ticket_key ${TMPFS_PATH}/${SERVER}.${KEY}.key"
-    done
-    echo $'\n'
-  done
-  echo "And reload the service afterwards."$'\n'
-
-  # Create symbolic link for regular rotation of session tickets.
-  ln -s "$(pwd)/${GENERATOR}.sh" "/etc/cron.${CRON_KEYWORD}/${CRON_LINKNAME}"
-
-  echo "The roation was set to ${CRON_KEYWORD} and will be automatically executed by"
-  echo "cron."
-  echo $'\n'
-  echo "Please refer to the documentation if you have a server cluster in use and"
-  echo "need to synchronize the keys."
-  echo $'\n'
+  # Remove the linked generator script from the cron directory.
+  CRON_LINK="/etc/cron.${CRON_KEYWORD}/${CRON_LINKNAME}"
+  if [ -h ${CRON_LINK} ]
+  then
+    rm -f ${CRON_LINK}
+    echo ""
+    echo "The symbolic link for automated ticket rotation within your cron directory"
+    echo "has been removed."
+  fi
 
   exit 0
+else
+  echo "Directory ${TMPFS_PATH} does not exist."
+  exit 1
 fi

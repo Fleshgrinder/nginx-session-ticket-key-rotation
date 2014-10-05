@@ -39,12 +39,18 @@
 # Absolute path to the temporary file system.
 TMPFS_PATH="/mnt/ngxtmpfs"
 
-# File name of the ticket files, note that the following scheme is used:
-#   "${FILE}.${i}.key"
-# Where $i has the following meaning:
-#   1. Used for de- and encryption.
-#   2. and 3. Used for decryption only.
-KEY_FILENAME="ngx_session_ticket"
+# Total server count; this may not have to reflect your actual server count.
+# Read the provided documentation carefully.
+SERVER_COUNT=1
+
+# The cron keyword where the rotation script should be linked in.
+CRON_KEYWORD="daily"
+
+# The name of the symbolic link within the cron directory.
+CRON_LINKNAME="rotate-nginx-session-tickets"
+
+# The name of the generator file.
+GENERATOR="generator"
 
 # Check return value of every executed command.
 set -e

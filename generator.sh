@@ -39,26 +39,39 @@
 # LINK: http://richard.fussenegger.info/
 # -----------------------------------------------------------------------------
 
-# Copy 2 over 3 and 1 over 2.
-for i in 2 1
-do
-  j = i + 1
+# Load configuration file.
+source $(pwd)/config.sh
 
-  # Only perform copy operation if we actually have something to copy, otherwise
-  # create an empty file (prevent nginx errors but don't provide random decrypt
-  # key because we have none).
-  if [ -f "${TMPFS_PATH}/${KEY_FILENAME}.${i}.key" ]
-  then
-    cp "${TMPFS_PATH}/${KEY_FILENAME}.${i}.key" "${TMPFS_PATH}/${KEY_FILENAME}.${j}.key"
-  else
-    touch "${TMPFS_PATH}/${KEY_FILENAME}.${j}.key"
-  fi
+for SERVER in ${SERVER_COUNT}
+do
+  # Copy 2 over 3 and 1 over 2.
+  for OLD_KEY in 2 1
+  do
+    NEW_KEY=`expr ${OLD_KEY} + 1`
+
+    # Only perform copy operation if we actually have something to copy,
+    # otherwise create file with random data to avoid nginx errors. Note that
+    # those files can't be used to decrypt anything, they are simple seed data.
+    if [ -f "${TMPFS_PATH}/${SERVER}.${OLD_KEY}.key" ]
+    then
+      cp "${TMPFS_PATH}/${SERVER}.${OLD_KEY}.key" "${TMPFS_PATH}/${SERVER}.${NEW_KEY}.key"
+    else
+      openssl rand 48 > "${TMPFS_PATH}/${SERVER}.${NEW_KEY}.key"
+    fi
+  done
+
+  # Generate new key for de- and encryption.
+  openssl rand 48 > "${TMPFS_PATH}/${SERVER}.1.key"
+
+  # Write generation timestamp to file for syncing servers.
+  date +%s > "${TMPFS_PATH}/${SERVER}.tsp"
 done
 
-# Generate new key for de- and encryption.
-openssl rand 48 > "${TMPFS_PATH}/${KEY_FILENAME}.1.key"
-
 # Reload nginx service and load new keys.
+#
+# TODO: A different script should reload the services at the same time on all
+#       servers of a cluster to ensure that none is going to start encrypting
+#       before all have the newly generated key.
 service nginx reload
 
 exit 0
