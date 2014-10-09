@@ -40,7 +40,7 @@
 # -----------------------------------------------------------------------------
 
 # Load configuration file.
-source $(pwd)/config.sh
+. ./config.sh
 
 for SERVER in ${SERVER_COUNT}
 do

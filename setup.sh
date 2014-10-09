@@ -37,51 +37,69 @@
 # -----------------------------------------------------------------------------
 
 # Load configuration file.
-source $(pwd)/config.sh
+. ./config.sh
 
-if [ -d "${TMPFS_PATH}" ]
+line
+
+compare_versions $(nginx -v) "1.5.7"
+
+# Ensure that this script is executed with elevated privileges.
+if [ $(whoami) != "root" ]
 then
-  echo "Aborting: directory ${TMPFS_PATH} already exists."
+  echo "${RED}ABORTING:${NORMAL} Script cannot be executed with non-privileged user!"
   exit 1
-else
-  # Create mount point for temporary file system.
-  mkdir "${TMPFS_PATH}"
-
-  # Apply very permissive permissions.
-  chmod 770 "${TMPFS_PATH}"
-
-  # Mount temporary file system and precise it's size.
-  #
-  # TODO: Check if ramfs is available and use it instead of tmpfs (swap).
-  mount -t tmpfs -o mode=770 tmpfs ${TMPFS_PATH}
-
-  # Automatically create temporary file system on start up in the future.
-  echo $'\n'"none ${TMPFS_PATH} ramfs defaults,mode=770 0 0"$'\n' >> /etc/fstab
-
-  # Generate session ticket key for encryption and fake decrypt files.
-  sh "$(pwd)/${GENERATOR}.sh"
-
-  echo "Please add the following lines to your nginx configuration:"$'\n'
-  for SERVER in ${SERVER_COUNT}
-  do
-    echo "Server ${SERVER}:"
-    for KEY in 1 2 3
-    do
-      echo "    ssl_session_ticket_key ${TMPFS_PATH}/${SERVER}.${KEY}.key"
-    done
-    echo $'\n'
-  done
-  echo "And reload the service afterwards."$'\n'
-
-  # Create symbolic link for regular rotation of session tickets.
-  ln -s "$(pwd)/${GENERATOR}.sh" "/etc/cron.${CRON_KEYWORD}/${CRON_LINKNAME}"
-
-  echo "The roation was set to ${CRON_KEYWORD} and will be automatically executed by"
-  echo "cron."
-  echo $'\n'
-  echo "Please refer to the documentation if you have a server cluster in use and"
-  echo "need to synchronize the keys."
-  echo $'\n'
-
-  exit 0
 fi
+
+# Make sure at least version 1.5.7 of nginx is installed on this system.
+if [ version_compare $(nginx -v) "1.5.7" < 0 ]
+then
+  printf "foo"
+  exit 1
+fi
+
+# Create mount point for temporary file system if it doesn't exist yet and apply
+# permissions which don't allow the rest of the world to access it.
+if [ ! -d ${TMPFS_PATH} ]
+then
+  mkdir ${TMPFS_PATH} && chmod 770 ${TMPFS_PATH}
+fi
+
+# The options that should be applied to the new file system. Note that not all
+# options are available if ramfs (default) is used. See "man mount" for more
+# available options.
+FS_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${SERVER_COUNT}m"
+
+# Mount temporary file system and precise it's size.
+#
+# TODO: Check if ramfs is available and use it instead of tmpfs (swap).
+mount -t tmpfs -o ${FS_OPTIONS} tmpfs ${TMPFS_PATH}
+
+# Automatically create temporary file system on start up in the future.
+echo $'\n'"none ${TMPFS_PATH} ramfs ${FS_OPTIONS} 0 0"$'\n' >> /etc/fstab
+
+# Generate session ticket key for encryption and fake decrypt files.
+sh "$(pwd)/${GENERATOR}.sh"
+
+echo "Please add the following lines to your nginx configuration:"$'\n'
+for SERVER in ${SERVER_COUNT}
+do
+  echo "Server ${SERVER}:"
+  for KEY in {1..3}
+  do
+    echo "    ssl_session_ticket_key ${TMPFS_PATH}/${SERVER}.${KEY}.key"
+  done
+  echo $'\n'
+done
+echo "And reload the service afterwards."$'\n'
+
+# Create symbolic link for regular rotation of session tickets.
+ln -s "$(pwd)/${GENERATOR}.sh" "/etc/cron.${CRON_KEYWORD}/${CRON_LINKNAME}"
+
+echo "The roation was set to ${CRON_KEYWORD} and will be automatically executed by"
+echo "cron."
+echo $'\n'
+echo "Please refer to the documentation if you have a server cluster in use and"
+echo "need to synchronize the keys."
+echo $'\n'
+
+exit 0

@@ -49,8 +49,75 @@ CRON_KEYWORD="daily"
 # The name of the symbolic link within the cron directory.
 CRON_LINKNAME="rotate-nginx-session-tickets"
 
+# ------------------------------------------------------------------------------
+# The code after this line shouldn't be changed unless you know what you're
+# doing.
+# ------------------------------------------------------------------------------
+
 # The name of the generator file.
 GENERATOR="generator"
 
-# Check return value of every executed command.
-set -e
+# For more information on shell colors and other text formatting see:
+# http://stackoverflow.com/a/4332530/1251219
+BLACK=$(tput setaf 0)
+RED=$(tput bold; tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+LIME_YELLOW=$(tput setaf 190)
+POWDER_BLUE=$(tput setaf 153)
+BLUE=$(tput setaf 4)
+MAGENTA=$(tput setaf 5)
+CYAN=$(tput setaf 6)
+WHITE=$(tput setaf 7)
+BRIGHT=$(tput bold)
+NORMAL=$(tput sgr0)
+BLINK=$(tput blink)
+REVERSE=$(tput smso)
+UNDERLINE=$(tput smul)
+
+# Compare two version strings: http://stackoverflow.com/a/3511118/1251219
+#
+# RETURN:
+#  -1 - first lower than second
+#   0 - equal
+#   1 - first higher than second
+compare_versions()
+{
+  for i in {1..4}
+  do
+    echo ${i}
+  done
+  return 0
+
+#  typeset    IFS='.'
+#  typeset -a v1=( $1 )
+#  typeset -a v2=( $2 )
+#  typeset    n diff
+#
+#  for (( n=0; n<4; n+=1 )); do
+#    diff=$((v1[n]-v2[n]))
+#    if [ $diff -ne 0 ] ; then
+#      [ $diff -lt 0 ] && echo '-1' || echo '1'
+#      return
+#    fi
+#  done
+#  echo  '0'
+}
+
+# Check the return code of the last executed command and exit with non-zero code
+# if the command returned a non-zero code. The message "Last command failed!"
+# will be displayed to the user.
+exit_on_error()
+{
+  if [ $? != 0 ]
+  then
+    "${RED}ABORTING:${NORMAL} Last command failed with exit code ${?}!"
+    exit 1
+  fi
+}
+
+# Print a line to the CLI consisting of 80 dashes and followed by a line feed.
+line()
+{
+  tput ich 80 "-"
+}

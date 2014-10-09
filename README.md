@@ -20,3 +20,10 @@ script. That's it, everything else is automated.
 > This is free and unencumbered software released into the public domain.
 >
 > For more information, please refer to <http://unlicense.org>
+
+## Weblinks
+Other repositories of interest:
+
+- [nginx-configuration](https://github.com/Fleshgrinder/nginx-configuration)
+- [nginx-compile](https://github.com/Fleshgrinder/nginx-compile)
+- [nginx-sysvinit-script](https://github.com/Fleshgrinder/nginx-sysvinit-script)

@@ -37,7 +37,7 @@
 # -----------------------------------------------------------------------------
 
 # Load configuration file.
-source $(pwd)/config.sh
+. ./config.sh
 
 if [ -d "${TMPFS_PATH}" ]
 then
