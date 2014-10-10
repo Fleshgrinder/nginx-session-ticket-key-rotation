@@ -28,7 +28,7 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# TLS session ticket key uninstaller.
+# nginx TLS session ticket key uninstaller program.
 #
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
@@ -37,7 +37,11 @@
 # ------------------------------------------------------------------------------
 
 # Load configuration and start program.
-. ./config.sh
+. './config.sh'
+
+# Start checking the environment by making sure that this program is privileged.
+echo 'Checking environment ...'
+is_privileged
 
 echo 'Begin uninstall ...'
 set -e
@@ -45,15 +49,15 @@ set -e
 warn 'TODO: Uninstall boot script.'
 warn 'TODO: Uninstall cron script.'
 
-if grep -qs "${FSTAB_COMMENT}" /etc/fstab
+if grep -qs "${FSTAB_COMMENT}" '/etc/fstab'
 then
-  sed -i'.bak' "/${FSTAB_COMMENT}/,+1 d" /etc/fstab
+  sed -i'.bak' "/${FSTAB_COMMENT}/,+1 d" '/etc/fstab'
   ok "Removed ${YELLOW}/etc/fstab${NORMAL} entry"
 else
   ok "No entry found in ${YELLOW}/etc/fstab${NORMAL}"
 fi
 
-if grep -qs "${KEY_PATH}" /proc/mounts
+if grep -qs "${KEY_PATH}" '/proc/mounts'
 then
   umount -l "${KEY_PATH}"
   ok "Unmounted ${YELLOW}${KEY_PATH}${NORMAL}"

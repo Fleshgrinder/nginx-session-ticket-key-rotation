@@ -28,7 +28,7 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# SSL/TLS session ticket key generator script.
+# nginx TLS session ticket key generator program.
 #
 # TODO: Error handling?
 # TODO: Different OpenSSL system version than nginx is using?
@@ -42,8 +42,25 @@
 # Load configuration and start program.
 if [ -z "${KEY_PATH}" ]
 then
-  . ./config.sh
+  . './config.sh'
 fi
+
+# Make sure that the program was invoked correctly.
+if [ "${#}" -le 1 ]
+then
+  # TODO: How can we solve this with HEREDOC?
+  echo "Usage: ${0} SERVER_NAME..." 2>&1
+  echo "Generate TLS session ticket keys for given server names." 2>&1
+  echo 2>&1
+  echo "Report bugs to richard@fussenegger.info" 2>&1
+  echo "GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation" 2>&1
+  echo "For complete documentation, see: README.md" 2>&1
+  exit 1
+fi
+
+# Start checking the environment by making sure that this program is privileged.
+echo 'Checking environment ...'
+is_privileged
 
 # Start key generation process.
 for SERVER in ${@}

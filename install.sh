@@ -28,7 +28,7 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# SSL/TLS session ticket key script setup.
+# nginx TLS session ticket key install program.
 #
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
@@ -37,14 +37,31 @@
 # ------------------------------------------------------------------------------
 
 # Load configuration and start program.
-. ./config.sh
+. './config.sh'
+
+# Make sure that the program was invoked correctly.
+if [ "${#}" -le 1 ]
+then
+  # TODO: How can we solve this with HEREDOC?
+  echo "Usage: ${0} SERVER_NAME..." 2>&1
+  echo "Install nginx TLS session ticket key rotation for given server names." 2>&1
+  echo 2>&1
+  echo "Report bugs to richard@fussenegger.info" 2>&1
+  echo "GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation" 2>&1
+  echo "For complete documentation, see: README.md" 2>&1
+  exit 1
+fi
+
+# Start checking the environment by making sure that this program is privileged.
+echo 'Checking environment ...'
+is_privileged
 
 # Make sure at least version 1.5.7 of nginx is installed on this system. The
 # output of `nginx -v` is sent to stderr (no clue why).
-NGINX_VERSION=$(nginx -v 2>&1)
-NGINX_VERSION=${NGINX_VERSION##*/}
-compare_versions ${NGINX_VERSION} "1.5.7"
-if [ ${?} -lt 1 ]
+NGINX_VERSION="$(nginx -v 2>&1)"
+NGINX_VERSION="${NGINX_VERSION##*/}"
+compare_versions "${NGINX_VERSION}" "1.5.7"
+if [ "${?}" -lt 1 ]
 then
   fail "Installed nginx version is ${YELLOW}${NGINX_VERSION}${NORMAL} which does not support the ${YELLOW}ssl_session_ticket_key${NORMAL} directive. You need at least version ${YELLOW}1.5.7${NORMAL}"
 else
@@ -52,12 +69,12 @@ else
 fi
 
 # Ensure either ramfs (preferred) or tmpfs is available.
-if grep -qs 'ramfs' /proc/filesystems
+if grep -qs 'ramfs' '/proc/filesystems'
 then
   ok "Using ${YELLOW}ramfs${NORMAL}"
   FILESYSTEM='ramfs'
 else
-  if grep -qs 'tmpfs' /proc/filesystems
+  if grep -qs 'tmpfs' '/proc/filesystems'
   then
     warn "Using ${YELLOW}tmpfs${NORMAL} which means that your keys ${UNDERLINE}might${NORMAL} hit persistent storage"
     FILESYSTEM='tmpfs'
@@ -73,13 +90,13 @@ then
 fi
 
 # Make sure nothing is mounted on the mounting directory.
-if grep -qs "${KEY_PATH}" /proc/mounts
+if grep -qs "${KEY_PATH}" '/proc/mounts'
 then
   fail "${YELLOW}${KEY_PATH}${NORMAL} already mounted"
 fi
 
 # Make sure no fstab entry already exists.
-if grep -qs "${FSTAB_COMMENT}" /etc/fstab
+if grep -qs "${FSTAB_COMMENT}" '/etc/fstab'
 then
   fail "${YELLOW}/etc/fstab${NORMAL} entry already exists"
 fi
@@ -103,19 +120,24 @@ chmod 0770 "${KEY_PATH}"
 chown root:root "${KEY_PATH}"
 ok "Created directory ${YELLOW}${KEY_PATH}${NORMAL}"
 
+# The options that should be applied to the new file system. Note that not all
+# options are available if ramfs (default) is used. See "man mount" for more
+# available options.
+FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${#}m"
+
 # Mount volatile file system.
-mount -t ${FILESYSTEM} -o ${FILESYSTEM_OPTIONS} ${FILESYSTEM} "${KEY_PATH}"
+mount -t "${FILESYSTEM}" -o "${FILESYSTEM_OPTIONS}" "${FILESYSTEM}" "${KEY_PATH}"
 ok "Mounted ${YELLOW}${FILESYSTEM}${NORMAL} on ${YELLOW}${KEY_PATH}${NORMAL}"
 
 # Add entry to /etc/fstab.
-echo "${FSTAB_COMMENT}\n${FILESYSTEM} ${KEY_PATH} ${FILESYSTEM} ${FILESYSTEM_OPTIONS} 0 0" >> /etc/fstab
+echo "${FSTAB_COMMENT}\n${FILESYSTEM} ${KEY_PATH} ${FILESYSTEM} ${FILESYSTEM_OPTIONS} 0 0" >> '/etc/fstab'
 ok "Added ${YELLOW}/etc/fstab${NORMAL} entry"
 
 # Generate the cron script.
 warn 'TODO: Implement cron sript!'
 
 # Generate TLS session ticket keys for each passed server.
-. ./${GENERATOR}.sh
+. "./${GENERATOR}.sh"
 
 # Create boot script and ensure it's executed before nginx.
 warn 'TODO: Implement boot script!'

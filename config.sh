@@ -28,7 +28,7 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# Configuration file for SSL/TLS session ticket rotation scripts.
+# Configuration file for nginx TLS session ticket rotation program.
 #
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
@@ -45,37 +45,16 @@ CRON_PATH='/etc/cron.d/nginx-session-ticket-key-rotation'
 # The name of the generator file.
 GENERATOR='generator'
 
-# Arrays aren't POSIX compliant and we can't easily get the length of the single
-# array we have at our disposal.
-SERVER_COUNT=0
-for SERVER in ${@}
-do
-  SERVER_COUNT=$(expr ${SERVER_COUNT} + 1)
-done
-
-# The options that should be applied to the new file system. Note that not all
-# options are available if ramfs (default) is used. See "man mount" for more
-# available options.
-FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${SERVER_COUNT}m"
-
 # The comment that should be added to /etc/fstab for easy identification.
 FSTAB_COMMENT='# Volatile nginx TLS session ticket key file system.'
 
 # For more information on shell colors and other text formatting see:
 # http://stackoverflow.com/a/4332530/1251219
-BLACK=$(tput setaf 0)
-RED=$(tput bold; tput setaf 1)
-GREEN=$(tput bold; tput setaf 2)
-YELLOW=$(tput bold; tput setaf 3)
-BLUE=$(tput bold; tput setaf 4)
-MAGENTA=$(tput setaf 5)
-CYAN=$(tput setaf 6)
-WHITE=$(tput setaf 7)
-BRIGHT=$(tput bold)
-NORMAL=$(tput sgr0)
-BLINK=$(tput blink)
-REVERSE=$(tput smso)
-UNDERLINE=$(tput smul)
+RED="$(tput bold; tput setaf 1)"
+GREEN="$(tput bold; tput setaf 2)"
+YELLOW="$(tput bold; tput setaf 3)"
+UNDERLINE="$(tput smul)"
+NORMAL="$(tput sgr0)"
 
 # Compare two version strings. Note that I'm using a very simple approach to
 # compare the versions because I expect properly formatted version strings from
@@ -87,12 +66,12 @@ UNDERLINE=$(tput smul)
 #  2 - first higher than second
 compare_versions()
 {
-  local V1=$(echo ${1} | tr -d '.')
-  local V2=$(echo ${2} | tr -d '.')
-  if [ ${V1} -gt ${V2} ]
+  local V1="$(echo ${1} | tr -d '.')"
+  local V2="$(echo ${2} | tr -d '.')"
+  if [ "${V1}" -gt "${V2}" ]
   then
     return 2
-  elif [ ${V1} -lt ${V2} ]
+  elif [ "${V1}" -lt "${V2}" ]
   then
     return 0
   fi
@@ -113,7 +92,7 @@ fail()
 # isn't.
 is_privileged()
 {
-  if [ $(whoami) != "root" ]
+  if [ "$(whoami)" != 'root' ]
   then
     fail 'Script cannot be executed with non-privileged user'
   else
@@ -138,9 +117,3 @@ warn()
 {
   echo "[${YELLOW}warn${NORMAL}] ${1} ..."
 }
-
-# ------------------------------------------------------------------------------
-# Start program ...
-
-echo 'Checking environment ...'
-is_privileged
