@@ -56,8 +56,12 @@ CRON_PATH='/etc/cron.d/session_ticket_key_rotation'
 # Absolute path to the temporary file system.
 KEY_PATH='/mnt/session_ticket_keys'
 
-# Absolute path to the boot program.
+# Absolute path to the system startup program.
 INIT_PATH='/etc/init.d/session_ticket_keys'
+INIT_NAME="${INIT_PATH##*/}"
+
+# Absolute path to the web server system startup program.
+SERVER_INIT_PATH='/etc/init.d/nginx'
 
 # The name of the generator file.
 GENERATOR='generator'

@@ -56,7 +56,7 @@ echo 'Checking environment ...'
 is_privileged
 
 chown -R root:root "${WD}"
-chmod 0770 "${WD}/*.sh"
+chmod 0770 "${WD}"/*.sh
 ok 'Repository files owned and executable by root users only'
 
 NGINX_VERSION="$(nginx -v 2>&1)"
@@ -100,8 +100,17 @@ fi
 
 if [ -f "${CRON_PATH}" ]
 then
-  rm -f "${CRON_PATH}"
-  warn "Cron program ${YELLOW}${CRON_PATH}${NORMAL} already exists"
+  fail "Cron program ${YELLOW}${CRON_PATH}${NORMAL} already exists"
+fi
+
+if [ -f "${INIT_PATH}" ]
+then
+  fail "System startup program ${YELLOW}${INIT_PATH}${NORMAL} already exists"
+fi
+
+if grep -qs " \$${INIT_NAME}" "${SERVER_INIT_PATH}"
+then
+  fail "System startup dependency already exists in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
 fi
 
 echo 'Begin installation ...'
@@ -162,8 +171,13 @@ cat << EOT > "${INIT_PATH}"
 sh '${WD}/${GENERATOR}.sh' ${@}
 
 EOT
-update-rc.d -n "${INIT_PATH##*/}" start 10 2 3 4 5 .
-ok "Created system startup program ${YELLOW}${INIT_PATH}${NORMAL} for generate keys on boot"
+ok "Created system startup program ${YELLOW}${INIT_PATH}${NORMAL} to generate keys on boot"
+
+update-rc.d "${INIT_NAME}" start 10 2 3 4 5 . 2>&- >&-
+ok "Created system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
+
+sed -i'.bak' "/# Required-Start:/ s/\$/ \$${INIT_NAME}/" "${SERVER_INIT_PATH}"
+ok "Created system startup dependency in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
 
 echo 'Install finished!'
 exit 0

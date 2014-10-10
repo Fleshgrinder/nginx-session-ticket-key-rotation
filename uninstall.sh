@@ -43,8 +43,16 @@ is_privileged
 
 echo 'Begin uninstall ...'
 
-update-rc.d -f "${INIT_PATH##*/}" remove 2>&- >&-
-ok "Removing any system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
+if grep -qs " \$${INIT_NAME}" "${SERVER_INIT_PATH}"
+then
+  sed -i'.bak' "s/ \$${INIT_NAME}//g" "${SERVER_INIT_PATH}"
+  ok "Removed system startup dependency in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
+else
+  ok "System startup dependency already removed in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
+fi
+
+update-rc.d -f "${INIT_NAME}" remove 2>&- >&-
+ok "Removed any system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
 
 set -e
 

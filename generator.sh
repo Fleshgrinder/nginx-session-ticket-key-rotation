@@ -81,8 +81,9 @@ do
     fi
   done
 
-  openssl rand 48 > "${KEY_PATH}/${SERVER}.1.key"
-  ok "Generated new encryption key ${YELLOW}${KEY_PATH}/${SERVER}.1.key${NORMAL}"
+  ENCRYPTION_KEY="${KEY_PATH}/${SERVER}.1.key"
+  openssl rand 48 > "${ENCRYPTION_KEY}"
+  ok "Generated new encryption key ${YELLOW}${ENCRYPTION_KEY}${NORMAL}"
 done
 
 echo 'Key generation finished!'
