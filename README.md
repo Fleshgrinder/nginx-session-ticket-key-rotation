@@ -1,6 +1,6 @@
-# nginx TLS session ticket key rotation
-[nginx](http://nginx.org/) TLS session ticket key rotation script collection for
-secure rotation of keys and sharing in server clusters.
+# nginx session ticket key rotation
+[nginx](http://nginx.org/) session ticket key rotation program for secure
+rotation of TLS session ticket keys and sharing in server clusters.
 
 ## Usage
 You should clone the repository to a place were it can stay. The files are
