@@ -28,7 +28,7 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# Configuration file for nginx TLS session ticket rotation program.
+# Configuration file for TLS session ticket rotation program.
 #
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
@@ -48,19 +48,25 @@ KEY_ROTATION='0 0,12 * * *'
 # This should be after the keys have been rotated (see $KEY_ROTATION). Note
 # that keys are only in-use after nginx has been restarted. This is very
 # important if you're syncing the keys within a cluster.
-SERVER_RESTART='30 0,12 * * *'
-
-# Absolute path to the temporary file system.
-KEY_PATH='/mnt/nginx-session-ticket-keys'
+SERVER_RELOAD='30 0,12 * * *'
 
 # Absolute path to the cron program.
-CRON_PATH='/etc/cron.d/nginx-session-ticket-key-rotation'
+CRON_PATH='/etc/cron.d/session_ticket_key_rotation'
+
+# Absolute path to the temporary file system.
+KEY_PATH='/mnt/session_ticket_keys'
+
+# Absolute path to the boot program.
+INIT_PATH='/etc/init.d/session_ticket_keys'
 
 # The name of the generator file.
 GENERATOR='generator'
 
 # The comment that should be added to /etc/fstab for easy identification.
-FSTAB_COMMENT='# Volatile nginx TLS session ticket key file system.'
+FSTAB_COMMENT='# Volatile TLS session ticket key file system.'
+
+# Get absolute path to the program.
+WD="$(cd `dirname ${0}`; pwd)"
 
 # For more information on shell colors and other text formatting see:
 # http://stackoverflow.com/a/4332530/1251219

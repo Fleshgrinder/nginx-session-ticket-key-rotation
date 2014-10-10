@@ -3,7 +3,12 @@
 secure rotation of keys and sharing in server clusters.
 
 ## Usage
+You should clone the repository to a place were it can stay. The files are
+needed and shouldn't be deleted. The best place is `/etc` as illustrated in the
+following example.
+
 ```
+cd /etc
 git clone https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation.git
 sh nginx-session-ticket-key-rotation/install.sh example.com localhost
 ```

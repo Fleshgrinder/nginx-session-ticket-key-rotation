@@ -28,7 +28,7 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# nginx TLS session ticket key uninstaller program.
+# TLS session ticket key uninstaller program.
 #
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
@@ -36,18 +36,33 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
-# Load configuration and start program.
 . './config.sh'
 
-# Start checking the environment by making sure that this program is privileged.
 echo 'Checking environment ...'
 is_privileged
 
 echo 'Begin uninstall ...'
+
+update-rc.d -f "${INIT_PATH##*/}" remove 2>&- >&-
+ok "Removing any system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
+
 set -e
 
-warn 'TODO: Uninstall boot program.'
-warn 'TODO: Uninstall cron program.'
+if [ -f "${INIT_PATH}" ]
+then
+  rm "${INIT_PATH}"
+  ok "Removed system startup program ${YELLOW}${INIT_PATH}${NORMAL}"
+else
+  ok "System startup program ${YELLOW}${INIT_PATH}${NORMAL} already removed"
+fi
+
+if [ -f "${CRON_PATH}" ]
+then
+  rm "${CRON_PATH}"
+  ok "Removed cron program ${YELLOW}${CRON_PATH}${NORMAL}"
+else
+  ok "Cron program ${YELLOW}${CRON_PATH}${NORMAL} already removed"
+fi
 
 if grep -qs "${FSTAB_COMMENT}" '/etc/fstab'
 then

@@ -28,10 +28,7 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# nginx TLS session ticket key generator program.
-#
-# TODO: Error handling?
-# TODO: Different OpenSSL system version than nginx is using?
+# TLS session ticket key generator program.
 #
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
@@ -39,13 +36,6 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
-# Load configuration and start program.
-if [ -z "${KEY_PATH}" ]
-then
-  . './config.sh'
-fi
-
-# Make sure that the program was invoked correctly.
 if [ "${#}" -le 1 ]
 then
   cat << EOT
@@ -60,11 +50,15 @@ EOT
   exit 1
 fi
 
-# Start checking the environment by making sure that this program is privileged.
-echo 'Checking environment ...'
-is_privileged
+# Configuration might already be loaded, this file is included during install.
+if [ -z "${KEY_PATH}" ]
+then
+  . './config.sh'
 
-# Start key generation process.
+  echo 'Checking environment ...'
+  is_privileged
+fi
+
 for SERVER in ${@}
 do
   # Copy 2 over 3 and 1 over 2.
@@ -74,8 +68,9 @@ do
     NEW_KEY="${KEY_PATH}/${SERVER}.$(expr ${KEY} + 1).key"
 
     # Only perform copy operation if we actually have something to copy,
-    # otherwise create file with random data to avoid nginx errors. Note that
-    # those files can't be used to decrypt anything, they are simple seed data.
+    # otherwise create file with random data to avoid web server errors. Note
+    # that those files can't be used to decrypt anything, they are simple seed
+    # data.
     if [ -f "${OLD_KEY}" ]
     then
       cp "${OLD_KEY}" "${NEW_KEY}"
@@ -86,12 +81,8 @@ do
     fi
   done
 
-  # Generate new key for de- and encryption.
   openssl rand 48 > "${KEY_PATH}/${SERVER}.1.key"
   ok "Generated new encryption key ${YELLOW}${KEY_PATH}/${SERVER}.1.key${NORMAL}"
-
-  # Write generation timestamp to file for syncing servers.
-  date +%s > "${KEY_PATH}/${SERVER}.tsp"
 done
 
 echo 'Key generation finished!'

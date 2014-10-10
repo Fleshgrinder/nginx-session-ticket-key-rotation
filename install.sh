@@ -28,7 +28,7 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# nginx TLS session ticket key install program.
+# TLS session ticket key install program.
 #
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
@@ -36,15 +36,11 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
-# Load configuration and start program.
-. './config.sh'
-
-# Make sure that the program was invoked correctly.
 if [ "${#}" -le 1 ]
 then
   cat << EOT
 Usage: ${0} SERVER_NAME...
-Install nginx TLS session ticket key rotation for given server names.
+Install TLS session ticket key rotation for given server names.
 
 Report bugs to richard@fussenegger.info
 GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation" 2>&1
@@ -54,12 +50,15 @@ EOT
   exit 1
 fi
 
-# Start checking the environment by making sure that this program is privileged.
+. './config.sh'
+
 echo 'Checking environment ...'
 is_privileged
 
-# Make sure at least version 1.5.7 of nginx is installed on this system. The
-# output of `nginx -v` is sent to stderr (no clue why).
+chown -R root:root "${WD}"
+chmod 0770 "${WD}/*.sh"
+ok 'Repository files owned and executable by root users only'
+
 NGINX_VERSION="$(nginx -v 2>&1)"
 NGINX_VERSION="${NGINX_VERSION##*/}"
 compare_versions "${NGINX_VERSION}" "1.5.7"
@@ -70,7 +69,6 @@ else
   ok "Installed nginx version is ${YELLOW}${NGINX_VERSION}${NORMAL}"
 fi
 
-# Ensure either ramfs (preferred) or tmpfs is available.
 if grep -qs 'ramfs' '/proc/filesystems'
 then
   ok "Using ${YELLOW}ramfs${NORMAL}"
@@ -85,64 +83,87 @@ else
   fi
 fi
 
-# Make sure mounting directory doesn't exist.
 if [ -d "${KEY_PATH}" ]
 then
   fail "Directory ${YELLOW}${KEY_PATH}${NORMAL} exists"
 fi
 
-# Make sure nothing is mounted on the mounting directory.
 if grep -qs "${KEY_PATH}" '/proc/mounts'
 then
   fail "${YELLOW}${KEY_PATH}${NORMAL} already mounted"
 fi
 
-# Make sure no fstab entry already exists.
 if grep -qs "${FSTAB_COMMENT}" '/etc/fstab'
 then
   fail "${YELLOW}/etc/fstab${NORMAL} entry already exists"
 fi
 
-# Make sure no cron program already exists.
 if [ -f "${CRON_PATH}" ]
 then
   rm -f "${CRON_PATH}"
   warn "Cron program ${YELLOW}${CRON_PATH}${NORMAL} already exists"
 fi
 
-# ------------------------------------------------------------------------------
-
 echo 'Begin installation ...'
 set -e
 
-# Create directory for mounting the file system and apply permissions and ensure
-# correct owner.
 mkdir "${KEY_PATH}"
 chmod 0770 "${KEY_PATH}"
 chown root:root "${KEY_PATH}"
 ok "Created directory ${YELLOW}${KEY_PATH}${NORMAL}"
 
-# The options that should be applied to the new file system. Note that not all
-# options are available if ramfs (default) is used. See "man mount" for more
-# available options.
+# Not all options have an effect if the preferred ramfs file system is used.
 FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${#}m"
 
-# Mount volatile file system.
 mount -t "${FILESYSTEM}" -o "${FILESYSTEM_OPTIONS}" "${FILESYSTEM}" "${KEY_PATH}"
 ok "Mounted ${YELLOW}${FILESYSTEM}${NORMAL} on ${YELLOW}${KEY_PATH}${NORMAL}"
 
-# Add entry to /etc/fstab.
 echo "${FSTAB_COMMENT}\n${FILESYSTEM} ${KEY_PATH} ${FILESYSTEM} ${FILESYSTEM_OPTIONS} 0 0" >> '/etc/fstab'
 ok "Added ${YELLOW}/etc/fstab${NORMAL} entry"
 
-# Generate the cron program.
-warn 'TODO: Implement cron program!'
+cat << EOT > "${CRON_PATH}"
+# ------------------------------------------------------------------------------
+# TLS session ticket key rotation.
+#
+# LINK: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
+# ------------------------------------------------------------------------------
 
-# Generate TLS session ticket keys for each passed server.
+${KEY_ROTATION} sh '${WD}/${GENERATOR}.sh' ${@}
+${SERVER_RELOAD} service nginx reload
+
+EOT
+ok "Created cron rotation job ${YELLOW}${CRON_PATH}${NORMAL}"
+
 . "./${GENERATOR}.sh"
 
-# Create boot program and ensure it's executed before nginx.
-warn 'TODO: Implement boot program!'
+cat << EOT > "${INIT_PATH}"
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:           session_ticket_keys
+# Required-Start:     $local_fs $syslog
+# Required-Stop:
+# Default-Start:      2 3 4 5
+# Default-Stop:
+# Short-Description:  Generates random TLS session ticket keys on boot.
+# Description:
+#  The script will generate random TLS session ticket keys for all servers that
+#  were defined during the installation of the program. The web server service
+#  should specify this script as a dependency, this ensures that keys are
+#  available on boot.
+### END INIT INFO
+
+# ------------------------------------------------------------------------------
+# TLS session ticket key rotation.
+#
+# LINK: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
+# ------------------------------------------------------------------------------
+
+sh '${WD}/${GENERATOR}.sh' ${@}
+
+EOT
+update-rc.d -n "${INIT_PATH##*/}" start 10 2 3 4 5 .
+ok "Created system startup program ${YELLOW}${INIT_PATH}${NORMAL} for generate keys on boot"
 
 echo 'Install finished!'
 exit 0
