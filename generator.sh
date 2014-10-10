@@ -48,13 +48,15 @@ fi
 # Make sure that the program was invoked correctly.
 if [ "${#}" -le 1 ]
 then
-  # TODO: How can we solve this with HEREDOC?
-  echo "Usage: ${0} SERVER_NAME..." 2>&1
-  echo "Generate TLS session ticket keys for given server names." 2>&1
-  echo 2>&1
-  echo "Report bugs to richard@fussenegger.info" 2>&1
-  echo "GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation" 2>&1
-  echo "For complete documentation, see: README.md" 2>&1
+  cat << EOT
+Usage: ${0} SERVER_NAME...
+Generate TLS session ticket keys for given server names.
+
+Report bugs to richard@fussenegger.info
+GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
+For complete documentation, see: README.md
+EOT
+  2>&1
   exit 1
 fi
 

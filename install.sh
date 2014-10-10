@@ -42,13 +42,15 @@
 # Make sure that the program was invoked correctly.
 if [ "${#}" -le 1 ]
 then
-  # TODO: How can we solve this with HEREDOC?
-  echo "Usage: ${0} SERVER_NAME..." 2>&1
-  echo "Install nginx TLS session ticket key rotation for given server names." 2>&1
-  echo 2>&1
-  echo "Report bugs to richard@fussenegger.info" 2>&1
-  echo "GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation" 2>&1
-  echo "For complete documentation, see: README.md" 2>&1
+  cat << EOT
+Usage: ${0} SERVER_NAME...
+Install nginx TLS session ticket key rotation for given server names.
+
+Report bugs to richard@fussenegger.info
+GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation" 2>&1
+For complete documentation, see: README.md
+EOT
+  2>&1
   exit 1
 fi
 
@@ -101,11 +103,11 @@ then
   fail "${YELLOW}/etc/fstab${NORMAL} entry already exists"
 fi
 
-# Make sure no cron script already exists.
+# Make sure no cron program already exists.
 if [ -f "${CRON_PATH}" ]
 then
   rm -f "${CRON_PATH}"
-  warn "Cron script ${YELLOW}${CRON_PATH}${NORMAL} already exists"
+  warn "Cron program ${YELLOW}${CRON_PATH}${NORMAL} already exists"
 fi
 
 # ------------------------------------------------------------------------------
@@ -133,14 +135,14 @@ ok "Mounted ${YELLOW}${FILESYSTEM}${NORMAL} on ${YELLOW}${KEY_PATH}${NORMAL}"
 echo "${FSTAB_COMMENT}\n${FILESYSTEM} ${KEY_PATH} ${FILESYSTEM} ${FILESYSTEM_OPTIONS} 0 0" >> '/etc/fstab'
 ok "Added ${YELLOW}/etc/fstab${NORMAL} entry"
 
-# Generate the cron script.
-warn 'TODO: Implement cron sript!'
+# Generate the cron program.
+warn 'TODO: Implement cron program!'
 
 # Generate TLS session ticket keys for each passed server.
 . "./${GENERATOR}.sh"
 
-# Create boot script and ensure it's executed before nginx.
-warn 'TODO: Implement boot script!'
+# Create boot program and ensure it's executed before nginx.
+warn 'TODO: Implement boot program!'
 
 echo 'Install finished!'
 exit 0

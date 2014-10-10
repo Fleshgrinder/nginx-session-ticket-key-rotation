@@ -36,10 +36,24 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
+# The session ticket keys rotation interval as cron mask.
+#
+# Default is 12 hours which means that a key will reside in memory for 36 hours
+# before it's deleted (three keys are used). You shouldn't go for much more
+# than 24 hours for the encrypt key.
+KEY_ROTATION='0 0,12 * * *'
+
+# The nginx restart interval as cron mask.
+#
+# This should be after the keys have been rotated (see $KEY_ROTATION). Note
+# that keys are only in-use after nginx has been restarted. This is very
+# important if you're syncing the keys within a cluster.
+SERVER_RESTART='30 0,12 * * *'
+
 # Absolute path to the temporary file system.
 KEY_PATH='/mnt/nginx-session-ticket-keys'
 
-# Absolute path to the cron script.
+# Absolute path to the cron program.
 CRON_PATH='/etc/cron.d/nginx-session-ticket-key-rotation'
 
 # The name of the generator file.
@@ -94,7 +108,7 @@ is_privileged()
 {
   if [ "$(whoami)" != 'root' ]
   then
-    fail 'Script cannot be executed with non-privileged user'
+    fail 'Program cannot be executed with non-privileged user'
   else
     ok 'Privileged user'
   fi

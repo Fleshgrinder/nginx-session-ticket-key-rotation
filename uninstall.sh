@@ -46,8 +46,8 @@ is_privileged
 echo 'Begin uninstall ...'
 set -e
 
-warn 'TODO: Uninstall boot script.'
-warn 'TODO: Uninstall cron script.'
+warn 'TODO: Uninstall boot program.'
+warn 'TODO: Uninstall cron program.'
 
 if grep -qs "${FSTAB_COMMENT}" '/etc/fstab'
 then
