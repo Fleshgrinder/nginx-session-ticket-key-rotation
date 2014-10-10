@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # This is free and unencumbered software released into the public domain.
 #
 # Anyone is free to copy, modify, publish, use, compile, sell, or
@@ -25,44 +25,49 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # For more information, please refer to <http://unlicense.org>
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
-# SSL/TLS session ticket key script setup.
+# ------------------------------------------------------------------------------
+# TLS session ticket key uninstaller.
 #
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
 # LICENSE: http://unlicense.org/ PD
 # LINK: http://richard.fussenegger.info/
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-# Load configuration file.
+# Load configuration and start program.
 . ./config.sh
 
-if [ -d "${TMPFS_PATH}" ]
+echo 'Begin uninstall ...'
+set -e
+
+warn 'TODO: Uninstall boot script.'
+warn 'TODO: Uninstall cron script.'
+
+if grep -qs "${FSTAB_COMMENT}" /etc/fstab
 then
-  # Unmount the temporary file system and delete the directory and all keys.
-  umount ${TMPFS_PATH}
-  rm -rf ${TMPFS_PATH}
-  echo "You need to edit your nginx configuration and remove all references to used"
-  echo "session ticket keys and reload the service afterwards."
-
-  # Remove previously created fstab entry. Note that we use @ as delimiter and
-  # avoid escaping of the path variable which contains slashes.
-  sed '\@^tmpfs ${TMPFS_PATH}@ d' /etc/fstab > /etc/fstab
-
-  # Remove the linked generator script from the cron directory.
-  CRON_LINK="/etc/cron.${CRON_KEYWORD}/${CRON_LINKNAME}"
-  if [ -h ${CRON_LINK} ]
-  then
-    rm -f ${CRON_LINK}
-    echo ""
-    echo "The symbolic link for automated ticket rotation within your cron directory"
-    echo "has been removed."
-  fi
-
-  exit 0
+  sed -i'.bak' "/${FSTAB_COMMENT}/,+1 d" /etc/fstab
+  ok "Removed ${YELLOW}/etc/fstab${NORMAL} entry"
 else
-  echo "Directory ${TMPFS_PATH} does not exist."
-  exit 1
+  ok "No entry found in ${YELLOW}/etc/fstab${NORMAL}"
 fi
+
+if grep -qs "${KEY_PATH}" /proc/mounts
+then
+  umount -l "${KEY_PATH}"
+  ok "Unmounted ${YELLOW}${KEY_PATH}${NORMAL}"
+else
+  ok "${YELLOW}${KEY_PATH}${NORMAL} already unmounted"
+fi
+
+if [ -d "${KEY_PATH}" ]
+then
+  rmdir "${KEY_PATH}"
+  ok "Removed directory ${YELLOW}${KEY_PATH}${NORMAL}"
+else
+  ok "Directory ${YELLOW}${KEY_PATH}${NORMAL} does not exist"
+fi
+
+echo 'Uninstall finished!'
+exit 0

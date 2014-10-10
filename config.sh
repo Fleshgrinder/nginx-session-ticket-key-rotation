@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # This is free and unencumbered software released into the public domain.
 #
 # Anyone is free to copy, modify, publish, use, compile, sell, or
@@ -25,47 +25,49 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # For more information, please refer to <http://unlicense.org>
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Configuration file for SSL/TLS session ticket rotation scripts.
 #
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
 # LICENSE: http://unlicense.org/ PD
 # LINK: http://richard.fussenegger.info/
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Absolute path to the temporary file system.
-TMPFS_PATH="/mnt/ngxtmpfs"
+KEY_PATH='/mnt/nginx-session-ticket-keys'
 
-# Total server count; this may not have to reflect your actual server count.
-# Read the provided documentation carefully.
-SERVER_COUNT=1
-
-# The cron keyword where the rotation script should be linked in.
-CRON_KEYWORD="daily"
-
-# The name of the symbolic link within the cron directory.
-CRON_LINKNAME="rotate-nginx-session-tickets"
-
-# ------------------------------------------------------------------------------
-# The code after this line shouldn't be changed unless you know what you're
-# doing.
-# ------------------------------------------------------------------------------
+# Absolute path to the cron script.
+CRON_PATH='/etc/cron.d/nginx-session-ticket-key-rotation'
 
 # The name of the generator file.
-GENERATOR="generator"
+GENERATOR='generator'
+
+# Arrays aren't POSIX compliant and we can't easily get the length of the single
+# array we have at our disposal.
+SERVER_COUNT=0
+for SERVER in ${@}
+do
+  SERVER_COUNT=$(expr ${SERVER_COUNT} + 1)
+done
+
+# The options that should be applied to the new file system. Note that not all
+# options are available if ramfs (default) is used. See "man mount" for more
+# available options.
+FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${SERVER_COUNT}m"
+
+# The comment that should be added to /etc/fstab for easy identification.
+FSTAB_COMMENT='# Volatile nginx TLS session ticket key file system.'
 
 # For more information on shell colors and other text formatting see:
 # http://stackoverflow.com/a/4332530/1251219
 BLACK=$(tput setaf 0)
 RED=$(tput bold; tput setaf 1)
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-LIME_YELLOW=$(tput setaf 190)
-POWDER_BLUE=$(tput setaf 153)
-BLUE=$(tput setaf 4)
+GREEN=$(tput bold; tput setaf 2)
+YELLOW=$(tput bold; tput setaf 3)
+BLUE=$(tput bold; tput setaf 4)
 MAGENTA=$(tput setaf 5)
 CYAN=$(tput setaf 6)
 WHITE=$(tput setaf 7)
@@ -75,49 +77,70 @@ BLINK=$(tput blink)
 REVERSE=$(tput smso)
 UNDERLINE=$(tput smul)
 
-# Compare two version strings: http://stackoverflow.com/a/3511118/1251219
+# Compare two version strings. Note that I'm using a very simple approach to
+# compare the versions because I expect properly formatted version strings from
+# nginx.
 #
 # RETURN:
-#  -1 - first lower than second
-#   0 - equal
-#   1 - first higher than second
+#  0 - first lower than second
+#  1 - equal
+#  2 - first higher than second
 compare_versions()
 {
-  for i in {1..4}
-  do
-    echo ${i}
-  done
-  return 0
-
-#  typeset    IFS='.'
-#  typeset -a v1=( $1 )
-#  typeset -a v2=( $2 )
-#  typeset    n diff
-#
-#  for (( n=0; n<4; n+=1 )); do
-#    diff=$((v1[n]-v2[n]))
-#    if [ $diff -ne 0 ] ; then
-#      [ $diff -lt 0 ] && echo '-1' || echo '1'
-#      return
-#    fi
-#  done
-#  echo  '0'
+  local V1=$(echo ${1} | tr -d '.')
+  local V2=$(echo ${2} | tr -d '.')
+  if [ ${V1} -gt ${V2} ]
+  then
+    return 2
+  elif [ ${V1} -lt ${V2} ]
+  then
+    return 0
+  fi
+  return 1
 }
 
-# Check the return code of the last executed command and exit with non-zero code
-# if the command returned a non-zero code. The message "Last command failed!"
-# will be displayed to the user.
-exit_on_error()
+# Display fail message and exit program.
+#
+# ARGS:
+#   $1 - The message's text.
+fail()
 {
-  if [ $? != 0 ]
+  echo "[${RED}fail${NORMAL}] ${1}." >&2
+  exit 1
+}
+
+# Check if the program is executed with privileged user rights and exit if it
+# isn't.
+is_privileged()
+{
+  if [ $(whoami) != "root" ]
   then
-    "${RED}ABORTING:${NORMAL} Last command failed with exit code ${?}!"
-    exit 1
+    fail 'Script cannot be executed with non-privileged user'
+  else
+    ok 'Privileged user'
   fi
 }
 
-# Print a line to the CLI consisting of 80 dashes and followed by a line feed.
-line()
+# Display ok message and continue program.
+#
+# ARGS:
+#   $1 - The message's text.
+ok()
 {
-  tput ich 80 "-"
+  echo "[ ${GREEN}ok${NORMAL} ] ${1} ..."
 }
+
+# Display warn message and continue program.
+#
+# ARGS:
+#   $1 - The message's text.
+warn()
+{
+  echo "[${YELLOW}warn${NORMAL}] ${1} ..."
+}
+
+# ------------------------------------------------------------------------------
+# Start program ...
+
+echo 'Checking environment ...'
+is_privileged

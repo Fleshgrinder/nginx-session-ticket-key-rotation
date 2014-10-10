@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # This is free and unencumbered software released into the public domain.
 #
 # Anyone is free to copy, modify, publish, use, compile, sell, or
@@ -25,9 +25,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # For more information, please refer to <http://unlicense.org>
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # SSL/TLS session ticket key generator script.
 #
 # TODO: Error handling?
@@ -37,41 +37,42 @@
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
 # LICENSE: http://unlicense.org/ PD
 # LINK: http://richard.fussenegger.info/
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-# Load configuration file.
-. ./config.sh
+# Load configuration and start program.
+if [ -z "${KEY_PATH}" ]
+then
+  . ./config.sh
+fi
 
-for SERVER in ${SERVER_COUNT}
+# Start key generation process.
+for SERVER in ${@}
 do
   # Copy 2 over 3 and 1 over 2.
-  for OLD_KEY in 2 1
+  for KEY in 2 1
   do
-    NEW_KEY=`expr ${OLD_KEY} + 1`
+    OLD_KEY="${KEY_PATH}/${SERVER}.${KEY}.key"
+    NEW_KEY="${KEY_PATH}/${SERVER}.$(expr ${KEY} + 1).key"
 
     # Only perform copy operation if we actually have something to copy,
     # otherwise create file with random data to avoid nginx errors. Note that
     # those files can't be used to decrypt anything, they are simple seed data.
-    if [ -f "${TMPFS_PATH}/${SERVER}.${OLD_KEY}.key" ]
+    if [ -f "${OLD_KEY}" ]
     then
-      cp "${TMPFS_PATH}/${SERVER}.${OLD_KEY}.key" "${TMPFS_PATH}/${SERVER}.${NEW_KEY}.key"
+      cp "${OLD_KEY}" "${NEW_KEY}"
+      ok "Copied ${YELLOW}${OLD_KEY}${NORMAL} over ${YELLOW}${NEW_KEY}${NORMAL}"
     else
-      openssl rand 48 > "${TMPFS_PATH}/${SERVER}.${NEW_KEY}.key"
+      openssl rand 48 > "${NEW_KEY}"
+      ok "Newly generated ${YELLOW}${NEW_KEY}${NORMAL}"
     fi
   done
 
   # Generate new key for de- and encryption.
-  openssl rand 48 > "${TMPFS_PATH}/${SERVER}.1.key"
+  openssl rand 48 > "${KEY_PATH}/${SERVER}.1.key"
+  ok "Generated new encryption key ${YELLOW}${KEY_PATH}/${SERVER}.1.key${NORMAL}"
 
   # Write generation timestamp to file for syncing servers.
-  date +%s > "${TMPFS_PATH}/${SERVER}.tsp"
+  date +%s > "${KEY_PATH}/${SERVER}.tsp"
 done
 
-# Reload nginx service and load new keys.
-#
-# TODO: A different script should reload the services at the same time on all
-#       servers of a cluster to ensure that none is going to start encrypting
-#       before all have the newly generated key.
-service nginx reload
-
-exit 0
+echo 'Key generation finished!'

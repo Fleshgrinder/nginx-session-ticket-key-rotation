@@ -1,29 +1,26 @@
-# nginx SSL/TLS session ticket key rotation
-[nginx](http://nginx.org/) SSL/TLS session ticket key rotation script collection.
-
-## Purpose
-
-
-## Install
-```
-git clone https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation.git
-cd nginx-session-ticket-key-rotation
-sh setup.sh
-```
+# nginx TLS session ticket key rotation
+[nginx](http://nginx.org/) TLS session ticket key rotation script collection for
+secure rotation of keys and sharing in server clusters.
 
 ## Usage
-You have to create a symbolic link to `generator.sh` from one of the default
-directories or add an entry to your crontab for regular execution of that
-script. That's it, everything else is automated.
+```
+git clone https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation.git
+sh nginx-session-ticket-key-rotation/install.sh example.com
+```
 
 ## License
 > This is free and unencumbered software released into the public domain.
 >
 > For more information, please refer to <http://unlicense.org>
 
+## References
+- Joseph Salowey, Harry Zhou, Pasi Eronen and Hannes Tschofenig: “[RFC 5077](https://tools.ietf.org/html/rfc5077)”, January, 2008.
+- Jacob Hoffman-Andrews: “[Forward Secrecy at Twitter](https://blog.twitter.com/2013/forward-secrecy-at-twitter)”, November 22th, 2013.
+- Adam Langley: “[How to botch TLS forward secrecy](https://www.imperialviolet.org/2013/06/27/botchingpfs.html)”, July 27th, 2013.
+- Jacob Hoffman-Andrews: “[How to check for TLS ticket key rotation](https://jacob.hoffman-andrews.com/README/how-to-check-for-tls-ticket-key-rotation/)”, December 5th, 2013.
+
 ## Weblinks
 Other repositories of interest:
-
 - [nginx-configuration](https://github.com/Fleshgrinder/nginx-configuration)
 - [nginx-compile](https://github.com/Fleshgrinder/nginx-compile)
 - [nginx-sysvinit-script](https://github.com/Fleshgrinder/nginx-sysvinit-script)
