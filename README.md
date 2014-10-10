@@ -5,7 +5,7 @@ secure rotation of keys and sharing in server clusters.
 ## Usage
 ```
 git clone https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation.git
-sh nginx-session-ticket-key-rotation/install.sh example.com
+sh nginx-session-ticket-key-rotation/install.sh example.com localhost
 ```
 
 ## License
