@@ -43,7 +43,7 @@ Usage: ${0} SERVER_NAME...
 Install TLS session ticket key rotation for given server names.
 
 Report bugs to richard@fussenegger.info
-GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation" 2>&1
+GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
 For complete documentation, see: README.md
 EOT
   2>&1
