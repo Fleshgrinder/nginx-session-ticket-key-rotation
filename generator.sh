@@ -59,7 +59,7 @@ then
   is_privileged
 fi
 
-if type openssl 2>&- >&-
+if type openssl 2>- >-
 then
   RANDOM_COMMAND='openssl'
 else
@@ -83,7 +83,7 @@ generate_key()
   then
     openssl rand 48 > "${1}"
   else
-    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48' 2>&- >&-
+    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48' 2>- >-
   fi
 }
 

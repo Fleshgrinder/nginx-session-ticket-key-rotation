@@ -59,6 +59,19 @@ chown -R root:root "${WD}"
 chmod 0770 "${WD}"/*.sh
 ok 'Repository files owned and executable by root users only'
 
+if type ntp 2>- >-
+then
+  ok "Found ${YELLOW}ntp${NORMAL}"
+elif type openntpd 2>- >-
+then
+  ok "Found ${YELLOW}openntpd${NORMAL}"
+elif type ntpdate 2>- >-
+then
+  warn "Found ${YELLOW}ntpdate${NORMAL} (deprecated)"
+else
+  warn "Consider installing an ${YELLOW}ntp daemon${NORMAL} to set your system time and ensure all servers are in sync"
+fi
+
 NGINX_VERSION="$(nginx -v 2>&1)"
 NGINX_VERSION="${NGINX_VERSION##*/}"
 compare_versions "${NGINX_VERSION}" "1.5.7"
@@ -173,7 +186,7 @@ sh '${WD}/${GENERATOR}.sh' ${@}
 EOT
 ok "Created system startup program ${YELLOW}${INIT_PATH}${NORMAL} to generate keys on boot"
 
-update-rc.d "${INIT_NAME}" start 10 2 3 4 5 . 2>&- >&-
+update-rc.d "${INIT_NAME}" start 10 2 3 4 5 . 2>- >-
 ok "Created system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
 
 sed -i'.bak' "/# Required-Start:/ s/\$/ \$${INIT_NAME}/" "${SERVER_INIT_PATH}"

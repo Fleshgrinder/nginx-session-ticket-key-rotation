@@ -51,7 +51,7 @@ else
   ok "System startup dependency already removed in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
 fi
 
-update-rc.d -f "${INIT_NAME}" remove 2>&- >&-
+update-rc.d -f "${INIT_NAME}" remove 2>- >-
 ok "Removed any system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
 
 set -e
