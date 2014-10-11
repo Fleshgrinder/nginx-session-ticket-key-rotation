@@ -138,7 +138,7 @@ cat << EOT > "${CRON_PATH}"
 # ------------------------------------------------------------------------------
 
 ${KEY_ROTATION} sh '${WD}/${GENERATOR}.sh' ${@}
-${SERVER_RELOAD} service nginx reload
+${SERVER_RELOAD} service '${SERVER_DAEMON}' reload
 
 EOT
 ok "Created cron rotation job ${YELLOW}${CRON_PATH}${NORMAL}"

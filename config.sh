@@ -62,6 +62,7 @@ INIT_NAME="${INIT_PATH##*/}"
 
 # Absolute path to the web server system startup program.
 SERVER_INIT_PATH='/etc/init.d/nginx'
+SERVER_DAEMON="${SERVER_INIT_PATH##*/}"
 
 # The name of the generator file.
 GENERATOR='generator'
