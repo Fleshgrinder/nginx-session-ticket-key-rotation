@@ -59,6 +59,34 @@ then
   is_privileged
 fi
 
+if type openssl 2>&- >&-
+then
+  RANDOM_COMMAND='openssl'
+else
+  RANDOM_COMMAND='dd'
+fi
+
+# Generate (48 byte) random session ticket key.
+#
+# We use OpenSSL to generate the random data if available and fallback to dd and
+# /dev/urandom if it's not available. Note that we use the unblocking device and
+# may risk that the random data isn't that random after all. But don't forget
+# that we generate volatile keys and not long lived ones, therefore it shouldn't
+# be a problem. Having a blocking device on the other hand could become a huge
+# problem if we try to start the server daemon and no keys are present.
+#
+# ARGS:
+#   $0 - Absolute path to the key file.
+generate_key()
+{
+  if [ "${RANDOM_COMMAND}" -eq 'openssl' ]
+  then
+    openssl rand 48 > "${1}"
+  else
+    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48'
+  fi
+}
+
 for SERVER in ${@}
 do
   # Copy 2 over 3 and 1 over 2.
@@ -76,13 +104,13 @@ do
       cp "${OLD_KEY}" "${NEW_KEY}"
       ok "Copied ${YELLOW}${OLD_KEY}${NORMAL} over ${YELLOW}${NEW_KEY}${NORMAL}"
     else
-      openssl rand 48 > "${NEW_KEY}"
+      generate_key "${NEW_KEY}"
       ok "Newly generated ${YELLOW}${NEW_KEY}${NORMAL}"
     fi
   done
 
   ENCRYPTION_KEY="${KEY_PATH}/${SERVER}.1.key"
-  openssl rand 48 > "${ENCRYPTION_KEY}"
+  generate_key "${ENCRYPTION_KEY}"
   ok "Generated new encryption key ${YELLOW}${ENCRYPTION_KEY}${NORMAL}"
 done
 
