@@ -79,11 +79,11 @@ fi
 #   $0 - Absolute path to the key file.
 generate_key()
 {
-  if [ "${RANDOM_COMMAND}" -eq 'openssl' ]
+  if [ "${RANDOM_COMMAND}" = 'openssl' ]
   then
     openssl rand 48 > "${1}"
   else
-    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48'
+    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48' 2>&- >&-
   fi
 }
 
