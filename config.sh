@@ -71,7 +71,7 @@ GENERATOR='generator'
 FSTAB_COMMENT='# Volatile TLS session ticket key file system.'
 
 # Get absolute path to the program.
-WD="$(cd `dirname ${0}`; pwd)"
+WD="$(cd $(dirname ${0}); pwd)"
 
 # For more information on shell colors and other text formatting see:
 # http://stackoverflow.com/a/4332530/1251219
@@ -103,26 +103,26 @@ compare_versions()
   return 1
 }
 
+# Check if the program is executed with privileged user rights and exit if it
+# isn't.
+is_privileged()
+{
+  if [ "$(whoami)" = 'root' ]
+  then
+    ok 'Privileged user'
+  else
+    fail 'Program cannot be executed with non-privileged user'
+  fi
+}
+
 # Display fail message and exit program.
 #
 # ARGS:
 #   $1 - The message's text.
 fail()
 {
-  echo "[${RED}fail${NORMAL}] ${1}." >&2
+  printf "[%sfail%s] %s.\n" "${RED}" "${NORMAL}" "${1}" >&2
   exit 1
-}
-
-# Check if the program is executed with privileged user rights and exit if it
-# isn't.
-is_privileged()
-{
-  if [ "$(whoami)" != 'root' ]
-  then
-    fail 'Program cannot be executed with non-privileged user'
-  else
-    ok 'Privileged user'
-  fi
 }
 
 # Display ok message and continue program.
@@ -131,7 +131,7 @@ is_privileged()
 #   $1 - The message's text.
 ok()
 {
-  echo "[ ${GREEN}ok${NORMAL} ] ${1} ..."
+  printf "[ %sok%s ] %s ...\n" "${GREEN}" "${NORMAL}" "${1}"
 }
 
 # Display warn message and continue program.
@@ -140,5 +140,5 @@ ok()
 #   $1 - The message's text.
 warn()
 {
-  echo "[${YELLOW}warn${NORMAL}] ${1} ..."
+  printf "[%swarn%s] %s ...\n" "${YELLOW}" "${NORMAL}" "${1}"
 }
