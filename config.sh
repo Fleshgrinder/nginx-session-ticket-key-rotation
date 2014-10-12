@@ -91,15 +91,10 @@ NORMAL="$(tput sgr0)"
 #  2 - first higher than second
 compare_versions()
 {
-  local V1="$(echo ${1} | tr -d '.')"
-  local V2="$(echo ${2} | tr -d '.')"
-  if [ "${V1}" -gt "${V2}" ]
-  then
-    return 2
-  elif [ "${V1}" -lt "${V2}" ]
-  then
-    return 0
-  fi
+  local V1="$(printf '%s' '${1}' | tr -d '.')"
+  local V2="$(printf '%s' '${2}' | tr -d '.')"
+  [ "${V1}" -gt "${V2}" ] && return 2
+  [ "${V1}" -lt "${V2}" ] && return 0
   return 1
 }
 
