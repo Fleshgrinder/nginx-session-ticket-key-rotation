@@ -36,65 +36,22 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
-. './config.sh'
-
-echo 'Checking environment ...'
-is_privileged
-
-echo 'Begin uninstall ...'
-
-if grep -qs " \$${INIT_NAME}" "${SERVER_INIT_PATH}"
-then
-  sed -i'.bak' "s/ \$${INIT_NAME}//g" "${SERVER_INIT_PATH}"
-  ok "Removed system startup dependency in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
-else
-  ok "System startup dependency already removed in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
-fi
-
-update-rc.d -f "${INIT_NAME}" remove 2>- >-
-ok "Removed any system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
-
+# Check return value of EVERY command / function and bail in case of non-zero.
 set -e
 
-if [ -f "${INIT_PATH}" ]
-then
-  rm "${INIT_PATH}"
-  ok "Removed system startup program ${YELLOW}${INIT_PATH}${NORMAL}"
-else
-  ok "System startup program ${YELLOW}${INIT_PATH}${NORMAL} already removed"
-fi
+# Complete the usage information for this program.
+DESCRIPTION='Uninstall TLS session ticket key rotation.'
 
-if [ -f "${CRON_PATH}" ]
-then
-  rm "${CRON_PATH}"
-  ok "Removed cron program ${YELLOW}${CRON_PATH}${NORMAL}"
-else
-  ok "Cron program ${YELLOW}${CRON_PATH}${NORMAL} already removed"
-fi
+# Absolute path to the directory of this program.
+WD=$(cd -- $(dirname -- "${0}"); pwd)
 
-if grep -qs "${FSTAB_COMMENT}" '/etc/fstab'
-then
-  sed -i'.bak' "/${FSTAB_COMMENT}/,+1 d" '/etc/fstab'
-  ok "Removed ${YELLOW}/etc/fstab${NORMAL} entry"
-else
-  ok "No entry found in ${YELLOW}/etc/fstab${NORMAL}"
-fi
+# Include the configuration with all variables and functions.
+. "${WD}/config.sh"
 
-if grep -qs "${KEY_PATH}" '/proc/mounts'
-then
-  umount -l "${KEY_PATH}"
-  ok "Unmounted ${YELLOW}${KEY_PATH}${NORMAL}"
-else
-  ok "${YELLOW}${KEY_PATH}${NORMAL} already unmounted"
-fi
+# Make sure the program is executed by a super user (root / sudo).
+super_user
 
-if [ -d "${KEY_PATH}" ]
-then
-  rmdir "${KEY_PATH}"
-  ok "Removed directory ${YELLOW}${KEY_PATH}${NORMAL}"
-else
-  ok "Directory ${YELLOW}${KEY_PATH}${NORMAL} does not exist"
-fi
+# Uninstall TLS session ticket key rotation.
+uninstall
 
-echo 'Uninstall finished!'
 exit 0

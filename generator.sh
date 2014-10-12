@@ -36,82 +36,30 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
-if [ "${#}" -le 1 ]
-then
-  cat << EOT
-Usage: ${0} SERVER_NAME...
-Generate TLS session ticket keys for given server names.
+# Check return value of EVERY command / function and bail in case of non-zero.
+set -e
 
-Report bugs to richard@fussenegger.info
-GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
-For complete documentation, see: README.md
-EOT
-  2>&1
+# Complete the usage information for this program.
+ARGUMENTS='SERVER_NAME...'
+DESCRIPTION='Generate TLS session ticket keys for given server names.'
+
+# Absolute path to the directory of this program.
+WD=$(cd -- $(dirname -- "${0}"); pwd)
+
+# Include the configuration with all variables and functions.
+. "${WD}/config.sh"
+
+# Make sure the program was called correctly, we need the servers names.
+if [ "${#}" -lt 1 ]
+then
+  usage 2>&1
   exit 1
 fi
 
-# Configuration might already be loaded, this file is included during install.
-if [ -z "${KEY_PATH}" ]
-then
-  . './config.sh'
+# Make sure the program is executed by a super user (root / sudo).
+super_user
 
-  echo 'Checking environment ...'
-  is_privileged
-fi
+# Generate keys for all passed servers.
+generate_keys ${@}
 
-if type openssl 2>- >-
-then
-  RANDOM_COMMAND='openssl'
-else
-  RANDOM_COMMAND='dd'
-fi
-
-# Generate (48 byte) random session ticket key.
-#
-# We use OpenSSL to generate the random data if available and fallback to dd and
-# /dev/urandom if it's not available. Note that we use the unblocking device and
-# may risk that the random data isn't that random after all. But don't forget
-# that we generate volatile keys and not long lived ones, therefore it shouldn't
-# be a problem. Having a blocking device on the other hand could become a huge
-# problem if we try to start the server daemon and no keys are present.
-#
-# ARGS:
-#   $0 - Absolute path to the key file.
-generate_key()
-{
-  if [ "${RANDOM_COMMAND}" = 'openssl' ]
-  then
-    openssl rand 48 > "${1}"
-  else
-    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48' 2>- >-
-  fi
-}
-
-for SERVER in ${@}
-do
-  # Copy 2 over 3 and 1 over 2.
-  for KEY in 2 1
-  do
-    OLD_KEY="${KEY_PATH}/${SERVER}.${KEY}.key"
-    NEW_KEY="${KEY_PATH}/${SERVER}.$(expr ${KEY} + 1).key"
-
-    # Only perform copy operation if we actually have something to copy,
-    # otherwise create file with random data to avoid web server errors. Note
-    # that those files can't be used to decrypt anything, they are simple seed
-    # data.
-    if [ -f "${OLD_KEY}" ]
-    then
-      cp "${OLD_KEY}" "${NEW_KEY}"
-      ok "Copied ${YELLOW}${OLD_KEY}${NORMAL} over ${YELLOW}${NEW_KEY}${NORMAL}"
-    else
-      generate_key "${NEW_KEY}"
-      ok "Newly generated ${YELLOW}${NEW_KEY}${NORMAL}"
-    fi
-  done
-
-  ENCRYPTION_KEY="${KEY_PATH}/${SERVER}.1.key"
-  generate_key "${ENCRYPTION_KEY}"
-  ok "Generated new encryption key ${YELLOW}${ENCRYPTION_KEY}${NORMAL}"
-done
-
-echo 'Key generation finished!'
+exit 0

@@ -36,111 +36,81 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
-if [ "${#}" -le 1 ]
-then
-  cat << EOT
-Usage: ${0} SERVER_NAME...
-Install TLS session ticket key rotation for given server names.
+# Check return value of EVERY command / function and bail in case of non-zero.
+set -e
 
-Report bugs to richard@fussenegger.info
-GitHub repository: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
-For complete documentation, see: README.md
-EOT
-  2>&1
+# Complete the usage information for this program.
+ARGUMENTS='SERVER_NAME...'
+DESCRIPTION='Install TLS session ticket key rotation for given server names.'
+
+# Absolute path to the directory of this program.
+WD=$(cd -- $(dirname -- "${0}"); pwd)
+
+# Include the configuration with all variables and functions.
+. "${WD}/config.sh"
+
+# Make sure that the program was called correctly, we need the servers names.
+if [ "${#}" -lt 1 ] 
+then
+  usage 2>&1
   exit 1
 fi
 
-. './config.sh'
+[ "${VERBOSE}" = true ] && printf 'Checking environment ...\n'
 
-echo 'Checking environment ...'
-is_privileged
+super_user
+check_ntpd
+is_installed "${SERVER}"
+check_version "${SERVER}" "${SERVER_MIN_VERSION}"
+check_filesystem "${FILESYSTEMS_PATH}"
 
-chown -R root:root "${WD}"
-chmod 0770 "${WD}"/*.sh
+# Simple fail only checks, we have to make sure that the currently configured
+# paths, etc. won't destroy anything already present on this system. Note that
+# some checks are redundant but we want to be on the safe side.
+#
+# Read the fail message to understand what's going on.
+
+[ -d "${KEY_PATH}" ] && \
+fail "Directory ${YELLOW}${KEY_PATH}${NORMAL} exists"
+
+grep -qs -- "${KEY_PATH}" /proc/mounts && \
+fail "${YELLOW}${KEY_PATH}${NORMAL} already mounted"
+
+grep -qs -- "${FSTAB_COMMENT}" /etc/fstab && \
+fail "${YELLOW}/etc/fstab${NORMAL} entry already exists"
+
+[ -f "${CRON_PATH}" ] && \
+fail "Cron program ${YELLOW}${CRON_PATH}${NORMAL} already exists"
+
+[ -f "${INIT_PATH}" ] && \
+fail "System startup program ${YELLOW}${INIT_PATH}${NORMAL} already exists"
+
+grep -qs -- " \$${INIT_NAME}" "${SERVER_INIT_PATH}" && \
+fail "System startup dependency already exists in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
+
+# Use a trap in case of any unforseen signals and rollback.
+trap uninstall 1 2 3 6 9 14 15
+
+[ "${VERBOSE}" = true ] && printf 'Installing ...\n'
+
+chown -R -- root:root "${WD}"
+chmod -- 0770 "${WD}"/*.sh
 ok 'Repository files owned and executable by root users only'
 
-if type ntp 2>- >-
-then
-  ok "Found ${YELLOW}ntp${NORMAL}"
-elif type openntpd 2>- >-
-then
-  ok "Found ${YELLOW}openntpd${NORMAL}"
-elif type ntpdate 2>- >-
-then
-  warn "Found ${YELLOW}ntpdate${NORMAL} (deprecated)"
-else
-  warn "Consider installing an ${YELLOW}ntp daemon${NORMAL} to set your system time and ensure all servers are in sync"
-fi
-
-NGINX_VERSION="$(nginx -v 2>&1)"
-NGINX_VERSION="${NGINX_VERSION##*/}"
-compare_versions "${NGINX_VERSION}" "1.5.7"
-if [ "${?}" -lt 1 ]
-then
-  fail "Installed nginx version is ${YELLOW}${NGINX_VERSION}${NORMAL} which does not support the ${YELLOW}ssl_session_ticket_key${NORMAL} directive. You need at least version ${YELLOW}1.5.7${NORMAL}"
-else
-  ok "Installed nginx version is ${YELLOW}${NGINX_VERSION}${NORMAL}"
-fi
-
-if grep -qs 'ramfs' '/proc/filesystems'
-then
-  ok "Using ${YELLOW}ramfs${NORMAL}"
-  FILESYSTEM='ramfs'
-else
-  if grep -qs 'tmpfs' '/proc/filesystems'
-  then
-    warn "Using ${YELLOW}tmpfs${NORMAL} which means that your keys ${UNDERLINE}might${NORMAL} hit persistent storage"
-    FILESYSTEM='tmpfs'
-  else
-    fail "No support for ${YELLOW}ramfs${NORMAL} nor ${YELLOW}tmpfs${NORMAL} on this system"
-  fi
-fi
-
-if [ -d "${KEY_PATH}" ]
-then
-  fail "Directory ${YELLOW}${KEY_PATH}${NORMAL} exists"
-fi
-
-if grep -qs "${KEY_PATH}" '/proc/mounts'
-then
-  fail "${YELLOW}${KEY_PATH}${NORMAL} already mounted"
-fi
-
-if grep -qs "${FSTAB_COMMENT}" '/etc/fstab'
-then
-  fail "${YELLOW}/etc/fstab${NORMAL} entry already exists"
-fi
-
-if [ -f "${CRON_PATH}" ]
-then
-  fail "Cron program ${YELLOW}${CRON_PATH}${NORMAL} already exists"
-fi
-
-if [ -f "${INIT_PATH}" ]
-then
-  fail "System startup program ${YELLOW}${INIT_PATH}${NORMAL} already exists"
-fi
-
-if grep -qs " \$${INIT_NAME}" "${SERVER_INIT_PATH}"
-then
-  fail "System startup dependency already exists in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
-fi
-
-echo 'Begin installation ...'
-set -e
-
-mkdir "${KEY_PATH}"
-chmod 0770 "${KEY_PATH}"
-chown root:root "${KEY_PATH}"
+mkdir -p -- "${KEY_PATH}"
+chmod -- 0770 "${KEY_PATH}"
+chown -- root:root "${KEY_PATH}"
 ok "Created directory ${YELLOW}${KEY_PATH}${NORMAL}"
 
 # Not all options have an effect if the preferred ramfs file system is used.
 FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${#}m"
 
-mount -t "${FILESYSTEM}" -o "${FILESYSTEM_OPTIONS}" "${FILESYSTEM}" "${KEY_PATH}"
+mount -t "${FILESYSTEM}" -o "${FILESYSTEM_OPTIONS}" -- "${FILESYSTEM}" "${KEY_PATH}"
 ok "Mounted ${YELLOW}${FILESYSTEM}${NORMAL} on ${YELLOW}${KEY_PATH}${NORMAL}"
 
-echo "${FSTAB_COMMENT}\n${FILESYSTEM} ${KEY_PATH} ${FILESYSTEM} ${FILESYSTEM_OPTIONS} 0 0" >> '/etc/fstab'
+cat << EOT >> /etc/fstab
+${FSTAB_COMMENT}\n${FILESYSTEM} ${KEY_PATH} ${FILESYSTEM} ${FILESYSTEM_OPTIONS} 0 0
+EOT
 ok "Added ${YELLOW}/etc/fstab${NORMAL} entry"
 
 cat << EOT > "${CRON_PATH}"
@@ -150,13 +120,13 @@ cat << EOT > "${CRON_PATH}"
 # LINK: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
 # ------------------------------------------------------------------------------
 
-${KEY_ROTATION} sh '${WD}/${GENERATOR}.sh' ${@}
+${KEY_ROTATION} sh '${WD}/generator.sh' ${@}
 ${SERVER_RELOAD} service '${SERVER_DAEMON}' reload
 
 EOT
 ok "Created cron rotation job ${YELLOW}${CRON_PATH}${NORMAL}"
 
-. "./${GENERATOR}.sh"
+generate_keys ${@}
 
 cat << EOT > "${INIT_PATH}"
 #!/bin/sh
@@ -186,11 +156,11 @@ sh '${WD}/${GENERATOR}.sh' ${@}
 EOT
 ok "Created system startup program ${YELLOW}${INIT_PATH}${NORMAL} to generate keys on boot"
 
-update-rc.d "${INIT_NAME}" start 10 2 3 4 5 . 2>- >-
+update-rc.d "${INIT_NAME}" start 10 2 3 4 5 . 2>&- >/dev/null
 ok "Created system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
 
-sed -i'.bak' "/# Required-Start:/ s/\$/ \$${INIT_NAME}/" "${SERVER_INIT_PATH}"
+sed -i'.bak' -- "/# Required-Start:/ s/\$/ \$${INIT_NAME}/" "${SERVER_INIT_PATH}"
 ok "Created system startup dependency in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
 
-echo 'Install finished!'
+[ "${VERBOSE}" = true ] && printf 'Installtion successful.\n'
 exit 0
