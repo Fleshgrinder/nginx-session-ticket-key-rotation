@@ -74,6 +74,6 @@ trap -- "rm -f -- ${EXPECTED} ${ACTUAL}" 0 1 2 3 6 9 14 15
 create_init_script "${ACTUAL}" "${WD}" 'example.com localhost'
 
 diff -- "${ACTUAL}" "${EXPECTED}" && test_ok || test_fail
-[ $(find "${ACTUAL}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
-[ $(find "${ACTUAL}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
-[ $(find "${ACTUAL}" -maxdepth 0 -printf '%m') -eq 755 ] && test_ok || test_fail
+[ $(stat --printf='%U' -- "${ACTUAL}") = 'root' ] && test_ok || test_fail
+[ $(stat --printf='%G' -- "${ACTUAL}") = 'root' ] && test_ok || test_fail
+[ $(stat --printf='%a' -- "${ACTUAL}") -eq 755 ] && test_ok || test_fail

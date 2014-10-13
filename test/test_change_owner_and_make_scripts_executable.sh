@@ -51,12 +51,12 @@ touch -- "${TEST_SCRIPT}"
 trap -- "rm -rf ${TEST_DIR}" 0 1 2 3 6 9 14 15
 
 change_owner_and_make_scripts_executable "${TEST_DIR}" 'root' && test_ok || test_fail
-[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%m') -eq 755 ] && test_ok || test_fail
-[ $(find "${TEST_FILE}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_FILE}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_FILE}" -maxdepth 0 -printf '%m') -eq 644 ] && test_ok || test_fail
-[ $(find "${TEST_SCRIPT}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_SCRIPT}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_SCRIPT}" -maxdepth 0 -printf '%m') -eq 744 ] && test_ok || test_fail
+[ $(stat --printf='%U' -- "${TEST_DIR}") = 'root' ] && test_ok || test_fail
+[ $(stat --printf='%G' -- "${TEST_DIR}") = 'root' ] && test_ok || test_fail
+[ $(stat --printf='%a' -- "${TEST_DIR}") -eq 755 ] && test_ok || test_fail
+[ $(stat --printf='%U' -- "${TEST_FILE}") = 'root' ] && test_ok || test_fail
+[ $(stat --printf='%G' -- "${TEST_FILE}") = 'root' ] && test_ok || test_fail
+[ $(stat --printf='%a' -- "${TEST_FILE}") -eq 644 ] && test_ok || test_fail
+[ $(stat --printf='%U' -- "${TEST_SCRIPT}") = 'root' ] && test_ok || test_fail
+[ $(stat --printf='%G' -- "${TEST_SCRIPT}") = 'root' ] && test_ok || test_fail
+[ $(stat --printf='%a' -- "${TEST_SCRIPT}") -eq 744 ] && test_ok || test_fail

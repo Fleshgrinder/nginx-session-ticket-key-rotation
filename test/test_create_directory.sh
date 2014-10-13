@@ -46,6 +46,6 @@ trap -- "rmdir -p --ignore-fail-on-non-empty -- ${TEST_DIR}" 0 1 2 3 6 9 14 15
 
 create_directory "${TEST_DIR}" 'root' && test_ok || test_fail
 [ -d "${TEST_DIR}" ] && test_ok || test_fail
-[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%m') -eq 550 ] && test_ok || test_fail
+[ $(stat --printf='%U' -- "${TEST_DIR}") = 'root' ] && test_ok || test_fail
+[ $(stat --printf='%G' -- "${TEST_DIR}") = 'root' ] && test_ok || test_fail
+[ $(stat --printf='%a' -- "${TEST_DIR}") -eq 550 ] && test_ok || test_fail
