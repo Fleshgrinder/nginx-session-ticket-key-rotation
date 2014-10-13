@@ -49,6 +49,6 @@ touch -- "${ACTUAL}"
 
 trap -- "rm -f -- ${EXPECTED} ${ACTUAL}" 0 1 2 3 6 9 14 15
 
-add_fstab_entry 'ramfs' 'defaults' '/mnt/point' "${ACTUAL}"
+add_fstab_entry 'ramfs' 'defaults' '/mnt/point' "${ACTUAL}" && test_ok || test_fail
 
 diff -- "${ACTUAL}" "${EXPECTED}" && test_ok || test_fail

@@ -37,25 +37,41 @@
 WD=$(cd -- $(dirname -- "${0}"); pwd)
 . "${WD}/test.sh"
 
-EXPECTED="${WD}/test_cron_expected"
-ACTUAL="${WD}/test_cron_actual"
+EXPECTED="${WD}/test_init_expected"
+ACTUAL="${WD}/test_init_actual"
 
 cat << EOT > "${EXPECTED}"
-# ------------------------------------------------------------------------------
-# TLS session ticket key rotation.
-#
-# LINK: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
-# ------------------------------------------------------------------------------
+#!/bin/sh
 
-0 0,12 * * * sh -- '${WD}' example.com localhost
-30 0,12 * * * service nginx reload
+### BEGIN INIT INFO
+# Provides:           something
+# Required-Start:     \$local_fs \$syslog \$dependency
+# Required-Stop:
+# Default-Start:      2 3 4 5
+# Default-Stop:
+# Short-Description:
+# Description:
+### END INIT INFO
 
 EOT
 
-touch -- "${ACTUAL}"
+cat << EOT > "${ACTUAL}"
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:           something
+# Required-Start:     \$local_fs \$syslog
+# Required-Stop:
+# Default-Start:      2 3 4 5
+# Default-Stop:
+# Short-Description:
+# Description:
+### END INIT INFO
+
+EOT
 
 trap -- "rm -f -- ${EXPECTED} ${ACTUAL}" 0 1 2 3 6 9 14 15
 
-create_cron_job "${ACTUAL}" "${WD}" 'example.com localhost' && test_ok || test_fail
+create_init_dependency /etc/init.d/dependency "${ACTUAL}" && test_ok || test_fail
 
 diff -- "${ACTUAL}" "${EXPECTED}" && test_ok || test_fail

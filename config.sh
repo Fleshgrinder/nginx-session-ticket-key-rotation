@@ -284,6 +284,20 @@ create_directory()
   ok "Created directory ${YELLOW}${1}${NORMAL}"
 }
 
+# Create init dependency.
+#
+# ARGS:
+#  $1 - Absolute path to the init script (the dependency).
+#  $2 - Absolute path to the depending init script.
+# RETURN:
+#  0 - Creation successful.
+#  1 - Creation failed.
+create_init_dependency()
+{
+  sed -i -- "/# Required-Start:/ s/\$/ \$${1##*/}/" "${2}" || return 1
+  ok "Created system startup dependency in ${YELLOW}${2}${NORMAL}"
+}
+
 # Create init script links.
 #
 # NOTE: The runlevels are fixed to boot only and sequence to 10.

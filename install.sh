@@ -108,9 +108,7 @@ create_cron_job "${CRON_PATH}" "${WD}/generator.sh" "$(echo ${@})"
 generate_keys "${@}"
 create_init_script "${INIT_PATH}" "${WD}/generator.sh" "$(echo ${@})"
 create_init_links "${INIT_PATH}"
-
-sed -i'.bak' -- "/# Required-Start:/ s/\$/ \$${INIT_NAME}/" "${SERVER_INIT_PATH}"
-ok "Created system startup dependency in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
+create_init_dependency "${INIT_PATH}" "${SERVER_INIT_PATH}"
 
 [ "${VERBOSE}" = true ] && printf 'Installtion successful.\n'
 exit 0

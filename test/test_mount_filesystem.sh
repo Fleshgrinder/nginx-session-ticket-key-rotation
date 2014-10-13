@@ -49,5 +49,5 @@ mkdir -p -- "${TEST_DIR}"
 
 trap -- test_mount_filesystem_teardown  0 1 2 3 6 9 14 15
 
-mount_filesystem 'ramfs' 'defaults' "${TEST_DIR}"
+mount_filesystem 'ramfs' 'defaults' "${TEST_DIR}" && test_ok || test_fail
 grep -qs -- "${TEST_DIR}" /proc/mounts && test_ok || test_fail

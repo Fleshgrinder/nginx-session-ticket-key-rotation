@@ -63,7 +63,7 @@ test_create_init_links_teardown()
 
 trap -- test_create_init_links_teardown 0 1 2 3 6 9 14 15
 
-create_init_links "${TEST_SCRIPT}"
+create_init_links "${TEST_SCRIPT}" && test_ok || test_fail
 
 for RUNLEVEL in 2 3 4 5
 do
