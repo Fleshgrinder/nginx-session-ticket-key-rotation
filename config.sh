@@ -112,6 +112,27 @@ VERBOSE=false
 # ------------------------------------------------------------------------------
 
 
+# Add fstab entry.
+#
+# GLOBAL:
+#  $FSTAB_COMMENT - The comment that's added in the line before the entry.
+# ARGS:
+#  $1 - The desired file system to mount.
+#  $2 - The file system's options
+#  $3 - The path to the file system.
+#  $4 - Absolute path to the fstab file.
+# RETURN:
+#  0 - Adding successful.
+#  1 - Adding failed.
+add_fstab_entry()
+{
+  cat << EOT >> "${4}" || return 1
+${FSTAB_COMMENT}
+${1} ${3} ${1} ${2} 0 0
+EOT
+  ok "Added ${YELLOW}${4}${NORMAL} entry"
+}
+
 # Change owner of a directory and all files in it and ensure shell scripts are
 # executable by the new owner only.
 #

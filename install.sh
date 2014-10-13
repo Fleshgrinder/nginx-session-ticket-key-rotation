@@ -103,11 +103,7 @@ create_directory "${KEY_PATH}" 'root'
 # Not all options have an effect if the preferred `ramfs` file system is used.
 readonly FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${#}m"
 mount_filesystem "${FILESYSTEM}" "${FILESYSTEM_OPTIONS}" "${KEY_PATH}"
-
-cat << EOT >> /etc/fstab
-${FSTAB_COMMENT}\n${FILESYSTEM} ${KEY_PATH} ${FILESYSTEM} ${FILESYSTEM_OPTIONS} 0 0
-EOT
-ok "Added ${YELLOW}/etc/fstab${NORMAL} entry"
+add_fstab_entry "${FILESYSTEM}" "${FILESYSTEM_OPTIONS}" "${KEY_PATH}" '/etc/fstab'
 
 cat << EOT > "${CRON_PATH}"
 # ------------------------------------------------------------------------------
