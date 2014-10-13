@@ -36,6 +36,7 @@
 
 # Include the config file which contains all variables and functions.
 . "${WD}/../config.sh"
+super_user
 
 # Do not output anything.
 SILENT=true
