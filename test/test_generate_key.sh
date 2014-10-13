@@ -28,6 +28,8 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
+# We can't validate random data, but we can check creation of file and length.
+#
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
 # LICENSE: http://unlicense.org/ PD
@@ -36,3 +38,17 @@
 
 WD=$(cd -- $(dirname -- "${0}"); pwd)
 . "${WD}/test.sh"
+
+TEST_FILE="${WD}/test_random_key"
+trap -- "rm -f ${TEST_FILE}" 0 1 2 3 6 9 14 15
+
+RANDOM_COMMAND='dd'
+generate_key "${TEST_FILE}" && test_ok || test_fail
+[ -f "${TEST_FILE}" ] && test_ok || test_fail
+[ $(stat --printf='%s' -- "${TEST_FILE}") -eq 48 ] && test_ok || test_fail
+rm -f "${TEST_FILE}"
+
+RANDOM_COMMAND='openssl'
+generate_key "${TEST_FILE}" && test_ok || test_fail
+[ -f "${TEST_FILE}" ] && test_ok || test_fail
+[ $(stat --printf='%s' -- "${TEST_FILE}") -eq 48 ] && test_ok || test_fail

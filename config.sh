@@ -187,13 +187,13 @@ on this system"
 #  0 - Always
 check_ntpd()
 {
-  if type ntp 2>&- >/dev/null
+  if type ntp >/dev/null 2>&1
   then
     ok "Found ${YELLOW}ntp${NORMAL}"
-  elif type openntpd 2>&- >/dev/null
+  elif type openntpd >/dev/null 2>&1
   then
     ok "Found ${YELLOW}openntpd${NORMAL}"
-  elif type ntpdate 2>&- >/dev/null
+  elif type ntpdate >/dev/null 2>&1
   then
     warn "Found ${YELLOW}ntpdate${NORMAL} (deprecated)"
   else
@@ -308,7 +308,7 @@ create_init_dependency()
 #  1 - Creation failed.
 create_init_links()
 {
-  update-rc.d "${1##*/}" start 10 2 3 4 5 . 2>&- >/dev/null || return 1
+  update-rc.d "${1##*/}" start 10 2 3 4 5 . >/dev/null 2>&1 || return 1
   ok "Created system startup links for ${YELLOW}${1}${NORMAL}"
 }
 
@@ -394,7 +394,7 @@ generate_key()
 {
   if [ -z "${RANDOM_COMMAND}" ]
   then
-    if type openssl 2>&- >/dev/null
+    if type openssl >/dev/null 2>&1
     then
       RANDOM_COMMAND='openssl'
     else
@@ -406,7 +406,7 @@ generate_key()
   then
     openssl rand 48 >"${1}" || return 1
   else
-    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48' >/dev/null || return 1
+    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48' 2>/dev/null || return 1
   fi
 }
 
@@ -461,7 +461,7 @@ generate_keys()
 #  1 - Not installed
 is_installed()
 {
-  if type "${1}" 2>&- >/dev/null
+  if type "${1}" >/dev/null 2>&1
   then
     ok "${YELLOW}${1}${NORMAL} is installed"
   else
@@ -535,7 +535,7 @@ uninstall()
     ok "System startup dependency already removed in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
   fi
 
-  update-rc.d -f "${INIT_NAME}" remove 2>&- >/dev/null
+  update-rc.d -f "${INIT_NAME}" remove >/dev/null 2>&1
   ok "Removed any system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
 
   if [ -f "${INIT_PATH}" ]
