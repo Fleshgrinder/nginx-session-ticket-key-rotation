@@ -13,6 +13,8 @@ git clone https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation.git
 sh nginx-session-ticket-key-rotation/install.sh example.com localhost
 ```
 
+> Note that the program was only tested on Debian.
+
 ### Tests
 The repository includes unit tests for most functions and an integration test.
 To run the test either execute them separately (have a look at the test
@@ -32,6 +34,13 @@ statement in each function.
 
 The best place for information on POSIX is [The Open Group Base Specifications]
 (http://pubs.opengroup.org/onlinepubs/9699919799/nframe.html).
+
+### TODO
+- Tell users to install something for better random numbers (esp. VPS), see [Havege](https://www.irisa.fr/caps/projects/hipsor/) ([`haveged`](https://packages.debian.org/wheezy/haveged)).
+- Tell users to test their random numbers ([`rngtest`](https://github.com/waitman/rngtest))?
+- Create slave program for clusters.
+- Install ntp daemon right away if none was found?
+- Test with other operating systems (currently only Debian tested).
 
 ## License
 > This is free and unencumbered software released into the public domain.
