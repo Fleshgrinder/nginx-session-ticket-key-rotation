@@ -65,7 +65,7 @@ fi
 super_user
 check_ntpd
 is_installed "${SERVER}"
-check_version "${SERVER}" "${SERVER_MIN_VERSION}"
+check_server_version "${SERVER}" "${SERVER_MIN_VERSION}"
 check_filesystem "${FILESYSTEMS_PATH}"
 
 # Simple fail only checks, we have to make sure that the currently configured

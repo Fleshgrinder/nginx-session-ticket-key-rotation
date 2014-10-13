@@ -37,10 +37,11 @@
 WD=$(cd -- $(dirname -- "${0}"); pwd)
 . "${WD}/test.sh"
 
-check_version nginx 0.0.1 && test_ok || test_fail
-check_version nginx 99.99.99 && test_fail || test_ok
+check_server_version "${SERVER}" '0.0.1' && test_ok || test_fail
+check_server_version "${SERVER}" "${SERVER_MIN_VERSION}" && test_ok || test_fail
+check_server_version "${SERVER}" '99.99.99' && test_fail || test_ok
 
 # Equal
-V=$(nginx -v 2>&1)
+V=$("${SERVER}" -v 2>&1 | head -n1)
 V="${V##*/}"
-check_version nginx "${V}" && test_ok || test_fail
+check_server_version "${SERVER}" "${V}" && test_ok || test_fail

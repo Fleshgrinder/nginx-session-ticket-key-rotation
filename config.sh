@@ -62,6 +62,9 @@ readonly SERVER_INIT_PATH='/etc/init.d/nginx'
 # The minimum version the server has to have for session ticket keys via files.
 readonly SERVER_MIN_VERSION='1.5.7'
 
+# The minimum version the OpenSSL library requires for session ticket support.
+readonly OPENSSL_MIN_VERSION='0.9.8f'
+
 # Absolute path to the cron program.
 readonly CRON_PATH='/etc/cron.d/session_ticket_key_rotation'
 
@@ -202,31 +205,74 @@ system time and ensure all servers are in sync"
   fi
 }
 
+# Check OpenSSL version which has (of course) an awkward formatting.
+#
+# ARGS:
+#  $1 - The minimum required version.
+# RETURN:
+#  0 - If version is equal or greater.
+#  1 - If version is lower.
+check_openssl_version()
+{
+  # Example output: `OpenSSL 1.0.1f 6 Jan 2014`
+  OPENSSL_VERSION=$(openssl version)
+
+  OPENSSL_VERSION="${OPENSSL_VERSION#* }" # Remove smallest prefix space.
+  OPENSSL_VERSION="${OPENSSL_VERSION%% *}" # Remove largest suffix space.
+  # Now we have only `1.0.1f` left from above example.
+
+  # This one's complicated. We need an integer for -ge comparison and therefore
+  # remove the last character and all dots from the version string. Afterwards
+  # we get the last character and convert it to its ASCII code point.
+  #
+  # Note the leading single quote in front of the second command, that's what
+  # converts the character to its code point.
+  V1=$(printf -- '%s%03d' \
+    "$(printf -- '%s' ${OPENSSL_VERSION} | head -c -1 | tr -d '.')" \
+    "'$(printf -- '%s' ${OPENSSL_VERSION} | tail -c -1)")
+
+  # Now we need to do the same with the minimum version.
+  V2=$(printf -- '%s%03d' \
+    "$(printf -- '%s' ${1} | head -c -1 | tr -d '.')" \
+    "'$(printf -- '%s' ${1} | tail -c -1)")
+
+  # Greater or equals is what we are interested in.
+  if [ "${V1}" -ge "${V2}" ]
+  then
+    ok "Installed OpenSSL version is ${YELLOW}${OPENSSL_VERSION}${NORMAL}"
+  else
+    fail "Installed OpenSSL version is ${YELLOW}${OPENSSL_VERSION}${NORMAL} \
+which does not support session ticket keys. You need to install at least \
+version ${YELLOW}${2}${NORMAL}"
+  fi
+}
+
 # Check program version.
 #
+# NOTE: Works for nginx and Apache http (httpd).
 # ARGS:
 #  $1 - The name of the program to check the version (must support -v option).
 #  $2 - The minimum version.
 # RETURN:
 #  0 - If version is equal or greater.
 #  1 - If version is lower.
-check_version()
+check_server_version()
 {
-  # Get version information from program.
-  SERVER_VERSION=$("${1}" -v 2>&1)
+  # Get version information from program. The head call isn't necessary for
+  # nginx but it is for httpd because it will output something like:
+  #   Server version: Apache/2.4.10
+  #   Server built:   Jul 09 2014 07:22:45
+  SERVER_VERSION=$("${1}" -v 2>&1 | head -n1)
 
-  # nginx specific, the format of the output looks like:
-  # `nginx version: nginx/1.7.6`
-  # We need to strip the part to the left of the slash.
-  SERVER_VERSION="${SERVER_VERSION##*/}"
+  # nginx: nginx version: nginx/1.7.6
+  # httpd: Server version: Apache/2.4.10
+  SERVER_VERSION="${SERVER_VERSION##*/}" # Remove longest match slash.
+  # nginx: 1.7.6
+  # httpd: 2.4.10
 
-  # Remove dots and leading zeros.
-  V1=$(printf '%s' "${SERVER_VERSION}" | tr -d '.')
-  V1="${V1##*0}"
-
-  # Remove dots and leading zeros.
-  V2=$(printf '%s' "${2}" | tr -d '.')
-  V2="${V2##*0}"
+  # Remove dots.
+  V1=$(printf -- '%s' "${SERVER_VERSION}" | tr -d '.')
+  V2=$(printf -- '%s' "${2}" | tr -d '.')
 
   # Greater or equals is what we are interested in.
   if [ "${V1}" -ge "${V2}" ]

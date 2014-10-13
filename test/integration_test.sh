@@ -41,6 +41,8 @@ set -e
 WD=$(cd -- $(dirname -- "${0}"); pwd)
 . "${WD}/test.sh"
 
+check_openssl_version "${OPENSSL_MIN_VERSION}"
+
 # Clean-up everything on exit (any: see trap).
 teardown()
 {
@@ -62,8 +64,6 @@ teardown()
   unset TEST_NAME
 }
 trap -- teardown 0 1 2 3 6 9 14 15
-
-# We need faster rotation, otherwise this test is going to take days.
 
 # Generate private key and certificate for localhost server.
 TEST_NAME='integration_test_key_cert'
