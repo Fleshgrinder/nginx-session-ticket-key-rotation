@@ -67,5 +67,5 @@ create_init_links "${TEST_SCRIPT}" && test_ok || test_fail
 
 for RUNLEVEL in 2 3 4 5
 do
-  [ -e "/etc/rc${RUNLEVEL}.d/S10${TEST_FILE}" ] && test_ok || test_fail
+  [ -L "/etc/rc${RUNLEVEL}.d/S10${TEST_FILE}" ] && test_ok || test_fail
 done
