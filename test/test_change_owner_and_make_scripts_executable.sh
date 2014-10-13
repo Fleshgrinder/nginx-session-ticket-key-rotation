@@ -28,8 +28,6 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# is_installed() unit test
-#
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
 # LICENSE: http://unlicense.org/ PD

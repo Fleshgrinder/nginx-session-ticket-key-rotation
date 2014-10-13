@@ -251,13 +251,13 @@ least version ${YELLOW}${2}${NORMAL}"
 # ARGS:
 #  $1 - Absolute path to the cron file.
 #  $2 - Absolute path to the rotation script.
-#  $* - The server names that should be passed to the rotations cript.
+#  $3 - The server names that should be passed to the rotation script.
 # RETURN:
 #  0 - Creation successful.
 #  1 - Creation failed.
 create_cron_job()
 {
-  cat << EOT > "${1}"
+  cat << EOT > "${1}" || return 1
 # ------------------------------------------------------------------------------
 # TLS session ticket key rotation.
 #
@@ -285,6 +285,49 @@ create_directory()
   chmod -- 0550 "${1}" || return 1
   chown -- "${2}":"${2}" "${1}" || return 1
   ok "Created directory ${YELLOW}${1}${NORMAL}"
+}
+
+# Create init script.
+#
+# ARGS:
+#  $1 - Absolute path to the init script.
+#  $2 - Absolute path to the key generation script.
+#  $3 - The server names that should be passed to the key generation script.
+# RETURN:
+#  0 - Creation successful.
+#  1 - Creation failed.
+create_init_script()
+{
+  DAEMON_NAME="${1##*/}"
+  cat << EOT > "${1}" || return 1
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:           ${DAEMON_NAME}
+# Required-Start:     \$local_fs \$syslog
+# Required-Stop:
+# Default-Start:      2 3 4 5
+# Default-Stop:
+# Short-Description:  Generates random TLS session ticket keys on boot.
+# Description:
+#  The script will generate random TLS session ticket keys for all servers that
+#  were defined during the installation of the program. The web server service
+#  should specify this script as a dependency, this ensures that keys are
+#  available on boot.
+### END INIT INFO
+
+# ------------------------------------------------------------------------------
+# TLS session ticket key rotation.
+#
+# LINK: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
+# ------------------------------------------------------------------------------
+
+sh '${2}' ${3}
+
+EOT
+  chown -- root:root "${1}" || return 1 # Init scripts always belong to root.
+  chmod -- 0755 "${1}" || return 1 # 0755 is the default for init scripts.
+  ok "Created system startup program ${YELLOW}${1}${NORMAL} to generate keys on boot"
 }
 
 # Display fail message and exit program.

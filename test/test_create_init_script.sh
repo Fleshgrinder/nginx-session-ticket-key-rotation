@@ -37,78 +37,40 @@
 WD=$(cd -- $(dirname -- "${0}"); pwd)
 . "${WD}/test.sh"
 
-# Create test filesystems file and delete on exit.
-TMP="${WD}/test_filesystems"
-trap -- "rm -f ${TMP}" 0 1 2 3 6 9 14 15
+EXPECTED="${WD}/test_init_expected"
+ACTUAL="${WD}/test_init_actual"
+
+cat << EOT > "${EXPECTED}"
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:           test_init_actual
+# Required-Start:     \$local_fs \$syslog
+# Required-Stop:
+# Default-Start:      2 3 4 5
+# Default-Stop:
+# Short-Description:  Generates random TLS session ticket keys on boot.
+# Description:
+#  The script will generate random TLS session ticket keys for all servers that
+#  were defined during the installation of the program. The web server service
+#  should specify this script as a dependency, this ensures that keys are
+#  available on boot.
+### END INIT INFO
 
 # ------------------------------------------------------------------------------
-# This fstab is taken from a Mint installation with ramfs.
-cat << EOT > "${TMP}"
-nodev	sysfs
-nodev	rootfs
-nodev	ramfs
-nodev	bdev
-nodev	proc
-nodev	cgroup
-nodev	cpuset
-nodev	tmpfs
-nodev	devtmpfs
-nodev	debugfs
-nodev	securityfs
-nodev	sockfs
-nodev	pipefs
-nodev	anon_inodefs
-nodev	devpts
-	ext3
-	ext2
-	ext4
-nodev	hugetlbfs
-	vfat
-nodev	ecryptfs
-	fuseblk
-nodev	fuse
-nodev	fusectl
-nodev	pstore
-nodev	mqueue
-nodev	binfmt_misc
-nodev	vboxsf
-	xfs
-	jfs
-	msdos
-	ntfs
-	minix
-	hfs
-	hfsplus
-	qnx4
-	ufs
-	btrfs
+# TLS session ticket key rotation.
+#
+# LINK: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
+# ------------------------------------------------------------------------------
+
+sh '${WD}' example.com localhost
+
 EOT
-check_filesystem "${TMP}" && test_ok || test_fail
-[ "${FILESYSTEM}" = ramfs ] && test_ok || test_fail
 
-# ------------------------------------------------------------------------------
-# This fstab is taken from an OVZ VPS.
-cat << EOT > "${TMP}"
-nodev   cgroup
-nodev   devpts
-nodev   mqueue
-        ext4
-nodev   nfs
-nodev   nfs4
-nodev   delayfs
-nodev   devtmpfs
-nodev   sysfs
-nodev   proc
-nodev   tmpfs
-nodev   binfmt_misc
-nodev   fusectl
-nodev   fuse
-EOT
-check_filesystem "${TMP}" && test_ok || test_fail
-[ "${FILESYSTEM}" = tmpfs ] && test_ok || test_fail
+touch -- "${ACTUAL}"
 
-# ------------------------------------------------------------------------------
-# Well, you guessed.
-cat /dev/null > "${TMP}"
-check_filesystem "${TMP}" && test_fail || test_ok
-[ "${FILESYSTEM}" = false ] && test_ok || test_fail
+trap -- "rm -f -- ${EXPECTED} ${ACTUAL}" 0 1 2 3 6 9 14 15
+
+create_init_script "${ACTUAL}" "${WD}" 'example.com localhost'
+
+diff -- "${ACTUAL}" "${EXPECTED}" && test_ok || test_fail

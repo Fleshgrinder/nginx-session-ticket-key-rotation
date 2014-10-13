@@ -28,8 +28,6 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# Execute all unit tests.
-#
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
 # LICENSE: http://unlicense.org/ PD
@@ -41,4 +39,4 @@ for TEST in $(dirname "${0}")/test_*.sh
 do
   sh -- "${TEST}"
 done
-printf -- '\nAll tests successful!\n'
+printf -- '\nFinished all tests!\n'

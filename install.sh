@@ -104,36 +104,9 @@ create_directory "${KEY_PATH}" 'root'
 readonly FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${#}m"
 mount_filesystem "${FILESYSTEM}" "${FILESYSTEM_OPTIONS}" "${KEY_PATH}"
 add_fstab_entry "${FILESYSTEM}" "${FILESYSTEM_OPTIONS}" "${KEY_PATH}" '/etc/fstab'
-create_cron_job "${CRON_PATH}" "${WD}/generator.sh" "${@}"
-generate_keys ${@}
-
-cat << EOT > "${INIT_PATH}"
-#!/bin/sh
-
-### BEGIN INIT INFO
-# Provides:           session_ticket_keys
-# Required-Start:     $local_fs $syslog
-# Required-Stop:
-# Default-Start:      2 3 4 5
-# Default-Stop:
-# Short-Description:  Generates random TLS session ticket keys on boot.
-# Description:
-#  The script will generate random TLS session ticket keys for all servers that
-#  were defined during the installation of the program. The web server service
-#  should specify this script as a dependency, this ensures that keys are
-#  available on boot.
-### END INIT INFO
-
-# ------------------------------------------------------------------------------
-# TLS session ticket key rotation.
-#
-# LINK: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
-# ------------------------------------------------------------------------------
-
-sh '${WD}/${GENERATOR}.sh' ${@}
-
-EOT
-ok "Created system startup program ${YELLOW}${INIT_PATH}${NORMAL} to generate keys on boot"
+create_cron_job "${CRON_PATH}" "${WD}/generator.sh" "$(echo ${@})"
+generate_keys "${@}"
+create_init_script "${INIT_PATH}" "${WD}/generator.sh" "$(echo ${@})"
 
 update-rc.d "${INIT_NAME}" start 10 2 3 4 5 . 2>&- >/dev/null
 ok "Created system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
