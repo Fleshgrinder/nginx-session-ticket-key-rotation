@@ -30,6 +30,10 @@
 # ------------------------------------------------------------------------------
 # TLS session ticket key install program.
 #
+# Note that user-defined function calls aren't documented in this script. Read
+# the functions documentation for more information, but usually the name of the
+# function should be sufficient to understand what's going on.
+#
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
 # LICENSE: http://unlicense.org/ PD
@@ -56,7 +60,7 @@ then
   exit 1
 fi
 
-[ "${VERBOSE}" = true ] && printf 'Checking environment ...\n'
+[ "${VERBOSE}" = true ] && printf -- 'Checking environment ...\n'
 
 super_user
 check_ntpd
@@ -91,16 +95,10 @@ fail "System startup dependency already exists in ${YELLOW}${SERVER_INIT_PATH}${
 # Use a trap in case of any unforseen signals and rollback.
 trap uninstall 1 2 3 6 9 14 15
 
-[ "${VERBOSE}" = true ] && printf 'Installing ...\n'
+[ "${VERBOSE}" = true ] && printf -- 'Installing ...\n'
 
-chown -R -- root:root "${WD}"
-chmod -- 0770 "${WD}"/*.sh
-ok 'Repository files owned and executable by root users only'
-
-mkdir -p -- "${KEY_PATH}"
-chmod -- 0770 "${KEY_PATH}"
-chown -- root:root "${KEY_PATH}"
-ok "Created directory ${YELLOW}${KEY_PATH}${NORMAL}"
+change_owner_and_make_scripts_executable "${WD}" 'root'
+create_directory "${KEY_PATH}" 'root'
 
 # Not all options have an effect if the preferred ramfs file system is used.
 FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${#}m"

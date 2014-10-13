@@ -36,24 +36,18 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
-# Include the config file which contains all variables and functions.
-. "${WD}/../config.sh"
 
-# Do not output anything.
-SILENT=true
+WD=$(cd -- $(dirname -- "${0}"); pwd)
+. "${WD}/test.sh"
 
-# Print green tick for successful test.
-#
-# RETURN:
-#  0 - Always
-test_ok()
-{
-  printf -- '%s✔%s' "${GREEN}" "${NORMAL}"
-}
+# Create paths to test directory and script.
+TEST_DIR="${WD}/test/test/test/test"
 
-# Print red x mark for unsuccessful test and exit with catchall error code.
-test_fail()
-{
-  printf -- '%s✘%s\nTest %s failed!\n' "${RED}" "${NORMAL}" $(basename -- "${0}" '.sh')
-  exit 1
-}
+# Clean-up on any signal including exit.
+trap -- "rmdir -p --ignore-fail-on-non-empty -- ${TEST_DIR}" 0 1 2 3 6 9 14 15
+
+create_directory "${TEST_DIR}" 'root' && test_ok || test_fail
+[ -d "${TEST_DIR}" ] && test_ok || test_fail
+[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
+[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
+[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%m') -eq 770 ] && test_ok || test_fail

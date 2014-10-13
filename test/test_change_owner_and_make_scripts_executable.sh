@@ -36,24 +36,29 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
-# Include the config file which contains all variables and functions.
-. "${WD}/../config.sh"
+WD=$(cd -- $(dirname -- "${0}"); pwd)
+. "${WD}/test.sh"
 
-# Do not output anything.
-SILENT=true
+# Create paths to test directory and script.
+TEST_DIR="${WD}/test"
+TEST_FILE="${TEST_DIR}/file"
+TEST_SCRIPT="${TEST_DIR}/test.sh"
 
-# Print green tick for successful test.
-#
-# RETURN:
-#  0 - Always
-test_ok()
-{
-  printf -- '%s✔%s' "${GREEN}" "${NORMAL}"
-}
+# Create directory and script.
+mkdir -p -- "${TEST_DIR}"
+touch -- "${TEST_FILE}"
+touch -- "${TEST_SCRIPT}"
 
-# Print red x mark for unsuccessful test and exit with catchall error code.
-test_fail()
-{
-  printf -- '%s✘%s\nTest %s failed!\n' "${RED}" "${NORMAL}" $(basename -- "${0}" '.sh')
-  exit 1
-}
+# Clean-up on any signal including exit.
+trap -- "rm -rf ${TEST_DIR}" 0 1 2 3 6 9 14 15
+
+change_owner_and_make_scripts_executable "${TEST_DIR}" 'root' && test_ok || test_fail
+[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
+[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
+[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%m') -eq 770 ] && test_ok || test_fail
+[ $(find "${TEST_FILE}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
+[ $(find "${TEST_FILE}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
+[ $(find "${TEST_FILE}" -maxdepth 0 -printf '%m') -eq 660 ] && test_ok || test_fail
+[ $(find "${TEST_SCRIPT}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
+[ $(find "${TEST_SCRIPT}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
+[ $(find "${TEST_SCRIPT}" -maxdepth 0 -printf '%m') -eq 770 ] && test_ok || test_fail

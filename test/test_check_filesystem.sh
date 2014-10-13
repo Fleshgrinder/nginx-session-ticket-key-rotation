@@ -113,3 +113,4 @@ check_filesystem "${TMP}" && test_ok || test_fail
 # Well, you guessed.
 cat /dev/null > "${TMP}"
 check_filesystem "${TMP}" && test_fail || test_ok
+[ "${FILESYSTEM}" = false ] && test_ok || test_fail

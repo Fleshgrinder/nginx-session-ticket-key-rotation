@@ -47,32 +47,32 @@
 # Default is 12 hours which means that a key will reside in memory for 36 hours
 # before it's deleted (three keys are used). You shouldn't go for much more
 # than 24 hours for the encrypt key.
-KEY_ROTATION='0 0,12 * * *'
+readonly KEY_ROTATION='0 0,12 * * *'
 
 # The nginx restart interval as cron mask.
 #
 # This should be after the keys have been rotated (see $KEY_ROTATION). Note
 # that keys are only in-use after nginx has been restarted. This is very
 # important if you're syncing the keys within a cluster.
-SERVER_RELOAD='30 0,12 * * *'
+readonly SERVER_RELOAD='30 0,12 * * *'
 
 # Absolute path to the web server system startup program.
-SERVER_INIT_PATH='/etc/init.d/nginx'
+readonly SERVER_INIT_PATH='/etc/init.d/nginx'
 
 # The minimum version the server has to have for session ticket keys via files.
-SERVER_MIN_VERSION='1.5.7'
+readonly SERVER_MIN_VERSION='1.5.7'
 
 # Absolute path to the cron program.
-CRON_PATH='/etc/cron.d/session_ticket_key_rotation'
+readonly CRON_PATH='/etc/cron.d/session_ticket_key_rotation'
 
 # Absolute path to the temporary file system.
-KEY_PATH='/mnt/session_ticket_keys'
+readonly KEY_PATH='/mnt/session_ticket_keys'
 
 # Absolute path to the system startup program.
-INIT_PATH='/etc/init.d/session_ticket_keys'
+readonly INIT_PATH='/etc/init.d/session_ticket_keys'
 
 # Absolute path to the `filesystems` file.
-FILESYSTEMS_PATH='/proc/filesystems'
+readonly FILESYSTEMS_PATH='/proc/filesystems'
 
 
 # ------------------------------------------------------------------------------
@@ -81,24 +81,24 @@ FILESYSTEMS_PATH='/proc/filesystems'
 
 
 # The comment that should be added to /etc/fstab for easy identification.
-FSTAB_COMMENT='# Volatile TLS session ticket key file system.'
+readonly FSTAB_COMMENT='# Volatile TLS session ticket key file system.'
 
 # Name of our init script for boot dependency.
-INIT_NAME="${INIT_PATH##*/}"
+readonly INIT_NAME="${INIT_PATH##*/}"
 
 # Name of the server daemon / executable.
-SERVER="${SERVER_INIT_PATH##*/}"
+readonly SERVER="${SERVER_INIT_PATH##*/}"
 
 # For more information on shell colors and other text formatting see:
 # http://stackoverflow.com/a/4332530/1251219
-RED=$(tput bold; tput setaf 1)
-GREEN=$(tput bold; tput setaf 2)
-YELLOW=$(tput bold; tput setaf 3)
-UNDERLINE=$(tput smul)
-NORMAL=$(tput sgr0)
+readonly RED=$(tput bold; tput setaf 1)
+readonly GREEN=$(tput bold; tput setaf 2)
+readonly YELLOW=$(tput bold; tput setaf 3)
+readonly UNDERLINE=$(tput smul)
+readonly NORMAL=$(tput sgr0)
 
 # This variable can be checked by scripts to see if they were included.
-CONFIG_LOADED=true
+readonly CONFIG_LOADED=true
 
 # Whether to suppress any output.
 SILENT=false
@@ -112,10 +112,31 @@ VERBOSE=false
 # ------------------------------------------------------------------------------
 
 
+# Change owner of a directory and all files in it and ensure shell scripts are
+# executable by the new owner only.
+#
+# ARGS:
+#  $1 - Absolute path to the directory.
+#  $2 - User and group name of the new owner.
+# RETURN:
+#  0 - If ownership was changed successfully.
+#  1 - If changing ownership failed.
+change_owner_and_make_scripts_executable()
+{
+  chown -R -- "${2}":"${2}" "${1}" || return 1
+  chmod -R -- 0755 "${1}" || return 1
+  find "${1}" -type f -exec chmod -- 0644 {} \; || return 1
+  find "${1}" -name '*.sh' -type f -exec chmod -- 0744 {} \; || return 1
+  ok "Repository files owned and executable by ${2} users only"
+}
+
 # Check available file systems for availability of a volatile one.
 #
 # GLOBAL:
-#  $FILESYSTEM
+#  $FILESYSTEM - After calling this function this global variable is set to the
+#    volatile file system that was found on this server. This is either `ramfs`
+#    or `tmpfs`. The variable is set to `false` if no volatile file system could
+#    be found.
 # ARGS:
 #  $1 - Absolute path to the `filesystems` file.
 # RETURN:
@@ -158,7 +179,8 @@ check_ntpd()
   then
     warn "Found ${YELLOW}ntpdate${NORMAL} (deprecated)"
   else
-    warn "Consider installing an ${YELLOW}ntp daemon${NORMAL} to set your system time and ensure all servers are in sync"
+    warn "Consider installing an ${YELLOW}ntp daemon${NORMAL} to set your \
+system time and ensure all servers are in sync"
   fi
 }
 
@@ -172,19 +194,23 @@ check_ntpd()
 #  1 - If version is lower.
 check_version()
 {
-  local SERVER_VERSION
-  local V1
-  local V2
-
+  # Get version information from program.
   SERVER_VERSION=$("${1}" -v 2>&1)
+
+  # nginx specific, the format of the output looks like:
+  # `nginx version: nginx/1.7.6`
+  # We need to strip the part to the left of the slash.
   SERVER_VERSION="${SERVER_VERSION##*/}"
 
+  # Remove dots and leading zeros.
   V1=$(printf '%s' "${SERVER_VERSION}" | tr -d '.')
   V1="${V1##*0}"
 
+  # Remove dots and leading zeros.
   V2=$(printf '%s' "${2}" | tr -d '.')
   V2="${V2##*0}"
 
+  # Greater or equals is what we are interested in.
   if [ "${V1}" -ge "${V2}" ]
   then
     ok "Installed server version is ${YELLOW}${SERVER_VERSION}${NORMAL}"
@@ -193,6 +219,22 @@ check_version()
 which does not support settings ticket keys via files. You need to install at \
 least version ${YELLOW}${2}${NORMAL}"
   fi
+}
+
+# Create directory and ensure it's only accessible by given user and group.
+#
+# ARGS:
+#  $1 - Absolute path to the directory that should be created.
+#  $2 - User and group name of the owner.
+# RETURN:
+#  0 - If directory was successfully created.
+#  1 - If creation of directory failed.
+create_directory()
+{
+  mkdir -p -- "${1}" || return 1
+  chmod -- 0770 "${1}" || return 1
+  chown -- "${2}":"${2}" "${1}" || return 1
+  ok "Created directory ${YELLOW}${1}${NORMAL}"
 }
 
 # Display fail message and exit program.
@@ -219,27 +261,33 @@ fail()
 # be a problem. Having a blocking device on the other hand could become a huge
 # problem if we try to start the server daemon and no keys are present.
 #
+# LINK: http://pubs.opengroup.org/onlinepubs/9699919799/utilities/dd.html#tag_20_31
+# GLOBAL:
+#  $RANDOM_COMMAND - Set in order to check only once for the available commands
+#    and reused during subsequent calls to this function. The variable contains
+#    either `openssl` or `dd`.
 # ARGS:
 #  $1 - Absolute path to the key file.
 # RETURN:
-#  0 - Always
+#  0 - If key generation was successful.
+#  1 - If key generation failed.
 generate_key()
 {
   if [ -z "${RANDOM_COMMAND}" ]
   then
     if type openssl 2>&- >/dev/null
     then
-      RANDOM_COMMAND=openssl
+      RANDOM_COMMAND='openssl'
     else
-      RANDOM_COMMAND=dd
+      RANDOM_COMMAND='dd'
     fi
   fi
 
-  if [ "${RANDOM_COMMAND}" = openssl ]
+  if [ "${RANDOM_COMMAND}" = 'openssl' ]
   then
-    openssl rand 48 >"${1}"
+    openssl rand 48 >"${1}" || return 1
   else
-    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48' >/dev/null
+    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48' >/dev/null || return 1
   fi
 }
 
@@ -248,18 +296,19 @@ generate_key()
 # ARGS:
 #  $@ - The server names to generate keys for.
 # RETURN:
-#  0 - Always
+#  0 - Generation of all keys was successful.
+#  1 - Generation of keys failed.
 generate_keys()
 {
-  [ "${VERBOSE}" = true ] && printf 'Generating random keys ...\n'
+  [ "${VERBOSE}" = true ] && printf -- 'Generating random keys ...\n'
 
   for SERVER in ${@}
   do
     # Copy 2 over 3 and 1 over 2.
     for KEY in 2 1
     do
-      local OLD_KEY="${KEY_PATH}/${SERVER}.${KEY}.key"
-      local NEW_KEY="${KEY_PATH}/${SERVER}.$(( ${KEY} + 1 )).key"
+      OLD_KEY="${KEY_PATH}/${SERVER}.${KEY}.key"
+      NEW_KEY="${KEY_PATH}/${SERVER}.$(( ${KEY} + 1 )).key"
 
       # Only perform copy operation if we actually have something to copy,
       # otherwise create file with random data to avoid web server errors. Note
@@ -267,7 +316,7 @@ generate_keys()
       # data.
       if [ -f "${OLD_KEY}" ]
       then
-        cp "${OLD_KEY}" "${NEW_KEY}"
+        cp -- "${OLD_KEY}" "${NEW_KEY}"
         ok "Copied ${YELLOW}${OLD_KEY}${NORMAL} over ${YELLOW}${NEW_KEY}${NORMAL}"
       else
         generate_key "${NEW_KEY}"
@@ -275,12 +324,12 @@ generate_keys()
       fi
     done
 
-    local ENCRYPTION_KEY="${KEY_PATH}/${SERVER}.1.key"
+    ENCRYPTION_KEY="${KEY_PATH}/${SERVER}.1.key"
     generate_key "${ENCRYPTION_KEY}"
     ok "Generated new encryption key ${YELLOW}${ENCRYPTION_KEY}${NORMAL}"
   done
 
-  [ "${VERBOSE}" = true ] && printf 'Key generation finished!\n'
+  [ "${VERBOSE}" = true ] && printf -- 'Key generation finished!\n'
   return 0
 }
 
@@ -303,15 +352,18 @@ is_installed()
 
 # Display ok message and continue program.
 #
+# Note that an ok message is only printed in verbose mode and if not silent.
+#
 # ARGS:
 #  $1 - The message's text.
 # RETURN:
-#  0 - Always
+#  0 - Message was printed to `stdout`
+#  1 - Printing of message failed.
 ok()
 {
   if [ "${VERBOSE}" = true ] && [ "${SILENT}" = false ]
   then
-    printf "[ %sok%s ] %s ...\n" "${GREEN}" "${NORMAL}" "${1}"
+    printf -- "[ %sok%s ] %s ...\n" "${GREEN}" "${NORMAL}" "${1}"
   fi
 }
 
@@ -322,7 +374,7 @@ ok()
 #  1 - No super user
 super_user()
 {
-  local UID=$(id -u)
+  UID=$(id -u)
   if [ "${UID}" -eq 0 ]
   then
     ok 'root (sudo)'
@@ -402,7 +454,8 @@ uninstall()
 #  $ARGUMENTS - Program argument description.
 #  $DESCRIPTION - Description what the program does.
 # RETURN:
-#  0 - Always
+#  0 - If usage was printed to `stdout`.
+#  1 - If printing failed.
 usage()
 {
   cat << EOT
@@ -421,10 +474,13 @@ EOT
 
 # Display warn message and continue program.
 #
+# Note that a warn message is only printed if not silent.
+#
 # ARGS:
 #  $1 - The message's text.
 # RETURN:
-#  0 - Always
+#  0 - Message was printed to `stdout`
+#  1 - Printing of message failed.
 warn()
 {
   if [ "${SILENT}" = false ]
@@ -448,5 +504,8 @@ do
     v) VERBOSE=true ;;
     *) usage 2>&1 && exit 1 ;;
   esac
+
+  # We have to remove found options from the input for later evaluations of
+  # passed arguments in subscripts that are not interested in these options.
   shift $(( $OPTIND - 1 ))
 done
