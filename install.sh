@@ -100,11 +100,9 @@ trap uninstall 1 2 3 6 9 14 15
 change_owner_and_make_scripts_executable "${WD}" 'root'
 create_directory "${KEY_PATH}" 'root'
 
-# Not all options have an effect if the preferred ramfs file system is used.
-FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${#}m"
-
-mount -t "${FILESYSTEM}" -o "${FILESYSTEM_OPTIONS}" -- "${FILESYSTEM}" "${KEY_PATH}"
-ok "Mounted ${YELLOW}${FILESYSTEM}${NORMAL} on ${YELLOW}${KEY_PATH}${NORMAL}"
+# Not all options have an effect if the preferred `ramfs` file system is used.
+readonly FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${#}m"
+mount_filesystem "${FILESYSTEM}" "${FILESYSTEM_OPTIONS}" "${KEY_PATH}"
 
 cat << EOT >> /etc/fstab
 ${FSTAB_COMMENT}\n${FILESYSTEM} ${KEY_PATH} ${FILESYSTEM} ${FILESYSTEM_OPTIONS} 0 0

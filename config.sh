@@ -302,13 +302,13 @@ generate_keys()
 {
   [ "${VERBOSE}" = true ] && printf -- 'Generating random keys ...\n'
 
-  for SERVER in ${@}
+  for SERVER_NAME in ${@}
   do
     # Copy 2 over 3 and 1 over 2.
     for KEY in 2 1
     do
-      OLD_KEY="${KEY_PATH}/${SERVER}.${KEY}.key"
-      NEW_KEY="${KEY_PATH}/${SERVER}.$(( ${KEY} + 1 )).key"
+      OLD_KEY="${KEY_PATH}/${SERVER_NAME}.${KEY}.key"
+      NEW_KEY="${KEY_PATH}/${SERVER_NAME}.$(( ${KEY} + 1 )).key"
 
       # Only perform copy operation if we actually have something to copy,
       # otherwise create file with random data to avoid web server errors. Note
@@ -324,7 +324,7 @@ generate_keys()
       fi
     done
 
-    ENCRYPTION_KEY="${KEY_PATH}/${SERVER}.1.key"
+    ENCRYPTION_KEY="${KEY_PATH}/${SERVER_NAME}.1.key"
     generate_key "${ENCRYPTION_KEY}"
     ok "Generated new encryption key ${YELLOW}${ENCRYPTION_KEY}${NORMAL}"
   done
@@ -348,6 +348,21 @@ is_installed()
   else
     fail "${YELLOW}${1}${NORMAL} does not seem to be installed"
   fi
+}
+
+# Mount file system.
+#
+# ARGS:
+#  $1 - The desired file system to mount.
+#  $2 - The file system's options
+#  $3 - The path to the file system.
+# RETURN:
+#  0 - Mounting successful.
+#  1 - Mounting failed.
+mount_filesystem()
+{
+  mount -t "${1}" -o "${2}" -- "${1}" "${3}" || return 1
+  ok "Mounted ${YELLOW}${1}${NORMAL} on ${YELLOW}${3}${NORMAL}"
 }
 
 # Display ok message and continue program.
