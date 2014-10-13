@@ -63,6 +63,7 @@ GROUP := ${USER}
 all:
 	clear
 	make test
+	make integration
 	-make install
 	make clean
 
@@ -72,11 +73,15 @@ clean:
 	chown -R -- ${USER}:${GROUP} .
 	chmod -R -- 0755 .
 	find . -type f -exec chmod -- 0644 {} \;
-	find . -name '*.sh' -type f -exec chmod -- 0744 {} \;
+	find . -name '*.sh' -type f -exec chmod -- 0755 {} \;
 
 # Install TLS session ticket key rotation for defined servers.
 install:
 	sh install.sh -v $(SERVER_NAMES)
+
+# Execute the integration test.
+integration:
+	sh test/integration_test.sh
 
 # Rotate existing TLS session ticket keys for defined servers.
 rotate:

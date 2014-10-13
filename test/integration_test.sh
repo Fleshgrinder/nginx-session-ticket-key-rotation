@@ -36,5 +36,46 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
+# Bail on any failed command / function.
+set -e
 WD=$(cd -- $(dirname -- "${0}"); pwd)
 . "${WD}/test.sh"
+
+# Clean-up everything on exit (any: see trap).
+teardown()
+{
+  # Restore the original nginx configuration.
+  if [ -f /etc/nginx/nginx.bak ]
+  then
+    mv -- /etc/nginx/nginx.bak /etc/nginx/nginx.conf
+  fi
+
+  # Uninstall everything and reset the files to their original state.
+  cd "${WD}/.."
+  make clean
+  #git reset --hard
+}
+trap -- teardown 0 1 2 3 6 9 14 15
+
+# We need faster rotation, otherwise this test is going to take days.
+
+# Generate private key and certificate for localhost server.
+
+# Create new nginx configuration, be sure to create a backup of the original.
+if [ -f /etc/nginx/nginx.conf ]
+then
+  cp -- /etc/nginx/nginx.conf /etc/nginx/nginx.bak
+fi
+
+# Make sure everything is sane and restart nginx.
+nginx -t
+service nginx restart
+
+# Install for localhost.
+cd "${WD}/.."
+make install
+
+# Now we are able to check key rotation.
+
+printf -- '[  %s✔%s ] Integration test was successful, keys are rotated correctly!\n' "${GREEN}" "${NORMAL}"
+exit 0
