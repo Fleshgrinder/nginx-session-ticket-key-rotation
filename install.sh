@@ -104,20 +104,7 @@ create_directory "${KEY_PATH}" 'root'
 readonly FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${#}m"
 mount_filesystem "${FILESYSTEM}" "${FILESYSTEM_OPTIONS}" "${KEY_PATH}"
 add_fstab_entry "${FILESYSTEM}" "${FILESYSTEM_OPTIONS}" "${KEY_PATH}" '/etc/fstab'
-
-cat << EOT > "${CRON_PATH}"
-# ------------------------------------------------------------------------------
-# TLS session ticket key rotation.
-#
-# LINK: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
-# ------------------------------------------------------------------------------
-
-${KEY_ROTATION} sh '${WD}/generator.sh' ${@}
-${SERVER_RELOAD} service '${SERVER_DAEMON}' reload
-
-EOT
-ok "Created cron rotation job ${YELLOW}${CRON_PATH}${NORMAL}"
-
+create_cron_job "${CRON_PATH}" "${WD}/generator.sh" "${@}"
 generate_keys ${@}
 
 cat << EOT > "${INIT_PATH}"

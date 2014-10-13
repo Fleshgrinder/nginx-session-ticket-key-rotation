@@ -43,7 +43,7 @@ EXPECTED="${WD}/test_fstab_expected"
 ACTUAL="${WD}/test_fstab_actual"
 
 cat << EOT > "${EXPECTED}"
-${FSTAB_COMMENT}
+# Volatile TLS session ticket key file system.
 ramfs /mnt/point ramfs defaults 0 0
 EOT
 

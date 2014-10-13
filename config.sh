@@ -242,6 +242,35 @@ least version ${YELLOW}${2}${NORMAL}"
   fi
 }
 
+# Create rotation cron job.
+#
+# GLOBALS:
+#  $KEY_ROTATION - The key rotation cron mask.
+#  $SERVER_RELOAD - The server reload cron mask.
+#  $SERVER - The name of the server daemon.
+# ARGS:
+#  $1 - Absolute path to the cron file.
+#  $2 - Absolute path to the rotation script.
+#  $* - The server names that should be passed to the rotations cript.
+# RETURN:
+#  0 - Creation successful.
+#  1 - Creation failed.
+create_cron_job()
+{
+  cat << EOT > "${1}"
+# ------------------------------------------------------------------------------
+# TLS session ticket key rotation.
+#
+# LINK: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
+# ------------------------------------------------------------------------------
+
+${KEY_ROTATION} sh -- '${2}' ${3}
+${SERVER_RELOAD} service ${SERVER} reload
+
+EOT
+  ok "Created cron rotation job ${YELLOW}${1}${NORMAL}"
+}
+
 # Create directory and ensure it's only accessible by given user and group.
 #
 # ARGS:

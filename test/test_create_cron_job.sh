@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # ------------------------------------------------------------------------------
 # This is free and unencumbered software released into the public domain.
 #
@@ -26,7 +28,7 @@
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
-# Makefile for easy pre-configured distribution of installation.
+# is_installed() unit test
 #
 # AUTHOR: Richard Fussenegger <richard@fussenegger.info>
 # COPYRIGHT: Copyright (c) 2013 Richard Fussenegger
@@ -34,55 +36,28 @@
 # LINK: http://richard.fussenegger.info/
 # ------------------------------------------------------------------------------
 
+WD=$(cd -- $(dirname -- "${0}"); pwd)
+. "${WD}/test.sh"
 
+EXPECTED="${WD}/test_cron_expected"
+ACTUAL="${WD}/test_cron_actual"
+
+cat << EOT > "${EXPECTED}"
 # ------------------------------------------------------------------------------
-#                                                                      Variables
-# ------------------------------------------------------------------------------
-
-
-# The server names to install or rotate for.
-SERVER_NAMES := example.com localhost
-
-# The name of the user the repository should own after clean.
-USER := fleshgrinder
-
-# The name of the group the repository should own after clean.
-GROUP := ${USER}
-
-
-# ------------------------------------------------------------------------------
-#                                                                        Targets
+# TLS session ticket key rotation.
+#
+# LINK: https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation
 # ------------------------------------------------------------------------------
 
+0 0,12 * * * sh -- '${WD}' example.com localhost
+30 0,12 * * * service nginx reload
 
-# Ensure make doesn't think these targets are up-to-date because of an existing
-# directory.
-.PHONY: test
+EOT
 
-# Mainly useful for testing.
-all:
-	clear
-	make test
-	-make install
-	make clean
+touch -- "${ACTUAL}"
 
-# Clean everything and change repository owner back to default.
-clean:
-	sh uninstall.sh -v
-	chown -R -- ${USER}:${GROUP} .
-	chmod -R -- 0755 .
-	find . -type f -exec chmod -- 0644 {} \;
-	find . -name '*.sh' -type f -exec chmod -- 0744 {} \;
+trap -- "rm -f -- ${EXPECTED} ${ACTUAL}" 0 1 2 3 6 9 14 15
 
-# Install TLS session ticket key rotation for defined servers.
-install:
-	sh install.sh -v $(SERVER_NAMES)
+create_cron_job "${ACTUAL}" "${WD}" 'example.com localhost'
 
-# Rotate existing TLS session ticket keys for defined servers.
-rotate:
-	sh generator.sh -v $(SERVER_NAMES)
-
-# Execute all unit tests and final integration test.
-test:
-	sh test/all.sh
-	# TODO: Implement integration test!
+diff -- "${ACTUAL}" "${EXPECTED}" && test_ok || test_fail
