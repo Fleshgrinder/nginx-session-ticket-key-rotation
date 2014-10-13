@@ -14,9 +14,9 @@ sh nginx-session-ticket-key-rotation/install.sh example.com localhost
 ```
 
 ### Tests
-The repository includes unit tests for all functions and an integration test. To
-run the test either execute them separately (have a look at the test directory)
-or by issuing `make test`.
+The repository includes unit tests for most functions and an integration test.
+To run the test either execute them separately (have a look at the test
+directory) or by issuing `make test`.
 
 You can safely delete the test directory if you don't want to waste disk space.
 
