@@ -83,9 +83,6 @@ readonly FILESYSTEMS_PATH='/proc/filesystems'
 # The comment that should be added to /etc/fstab for easy identification.
 readonly FSTAB_COMMENT='# Volatile TLS session ticket key file system.'
 
-# Name of our init script for boot dependency.
-readonly INIT_NAME="${INIT_PATH##*/}"
-
 # Name of the server daemon / executable.
 readonly SERVER="${SERVER_INIT_PATH##*/}"
 
@@ -287,8 +284,23 @@ create_directory()
   ok "Created directory ${YELLOW}${1}${NORMAL}"
 }
 
+# Create init script links.
+#
+# NOTE: The runlevels are fixed to boot only and sequence to 10.
+# ARGS:
+#  $1 - Absolute path to the init script to create links for.
+# RETURN:
+#  0 - Creation successful.
+#  1 - Creation failed.
+create_init_links()
+{
+  update-rc.d "${1##*/}" start 10 2 3 4 5 . 2>&- >/dev/null || return 1
+  ok "Created system startup links for ${YELLOW}${1}${NORMAL}"
+}
+
 # Create init script.
 #
+# NOTE: The runlevels are fixed to boot only.
 # ARGS:
 #  $1 - Absolute path to the init script.
 #  $2 - Absolute path to the key generation script.

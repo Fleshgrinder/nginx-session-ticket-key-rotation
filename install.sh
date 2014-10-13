@@ -107,9 +107,7 @@ add_fstab_entry "${FILESYSTEM}" "${FILESYSTEM_OPTIONS}" "${KEY_PATH}" '/etc/fsta
 create_cron_job "${CRON_PATH}" "${WD}/generator.sh" "$(echo ${@})"
 generate_keys "${@}"
 create_init_script "${INIT_PATH}" "${WD}/generator.sh" "$(echo ${@})"
-
-update-rc.d "${INIT_NAME}" start 10 2 3 4 5 . 2>&- >/dev/null
-ok "Created system startup links for ${YELLOW}${INIT_PATH}${NORMAL}"
+create_init_links "${INIT_PATH}"
 
 sed -i'.bak' -- "/# Required-Start:/ s/\$/ \$${INIT_NAME}/" "${SERVER_INIT_PATH}"
 ok "Created system startup dependency in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
