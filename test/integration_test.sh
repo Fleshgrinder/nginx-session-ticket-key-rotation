@@ -44,6 +44,9 @@ WD=$(cd -- $(dirname -- "${0}"); pwd)
 # Clean-up everything on exit (any: see trap).
 teardown()
 {
+  rm -f -- /etc/nginx/cert.key
+  rm -f -- /etc/nginx/cert.pem
+
   # Restore the original nginx configuration.
   if [ -f /etc/nginx/nginx.bak ]
   then
@@ -52,14 +55,29 @@ teardown()
 
   # Uninstall everything and reset the files to their original state.
   cd "${WD}/.."
-  make clean
-  #git reset --hard
+  TEST_NAME='integration_test_uninstall'
+  make clean >/dev/null 2>&1 || test_fail
+  TEST_NAME='integration_test_git_reset'
+  #git reset --hard >/dev/null 2>&1 || test_fail
+  unset TEST_NAME
 }
 trap -- teardown 0 1 2 3 6 9 14 15
 
 # We need faster rotation, otherwise this test is going to take days.
 
 # Generate private key and certificate for localhost server.
+TEST_NAME='integration_test_key_cert'
+openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+  -keyout /etc/nginx/cert.key -out /etc/nginx/cert.pem << EOT >/dev/null 2>&1 || test_fail
+XX
+State
+City
+Company
+
+root
+root@localhost
+EOT
+unset TEST_NAME
 
 # Create new nginx configuration, be sure to create a backup of the original.
 if [ -f /etc/nginx/nginx.conf ]
@@ -67,15 +85,49 @@ then
   cp -- /etc/nginx/nginx.conf /etc/nginx/nginx.bak
 fi
 
-# Make sure everything is sane and restart nginx.
-nginx -t
-service nginx restart
+# Create simple TLS server configuration for localhost.
+cat << EOT > /etc/nginx/nginx.conf
+worker_processes  1;
+events {
+  worker_connections  1024;
+}
+http {
+  server {
+    listen                     443 ssl;
+    server_name                localhost;
+    ssl_certificate            cert.pem;
+    ssl_certificate_key        cert.key;
+    ssl_ciphers                HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers  on;
+    ssl_session_ticket_key     ${KEY_PATH}/localhost.1.key;
+    ssl_session_ticket_key     ${KEY_PATH}/localhost.2.key;
+    ssl_session_ticket_key     ${KEY_PATH}/localhost.3.key;
+  }
+}
+EOT
 
 # Install for localhost.
 cd "${WD}/.."
-make install
+TEST_NAME='integration_test_install'
+make install >/dev/null 2>&1
+unset TEST_NAME
+
+# Make sure everything is sane.
+TEST_NAME='integration_test_nginx_conf'
+nginx -t >/dev/null 2>&1 || test_fail
+unset TEST_NAME
+
+# Restart or start nginx.
+TEST_NAME='integration_test_nginx_start'
+if service nginx status >/dev/null
+then
+  service nginx restart >/dev/null || test_fail
+else
+  service nginx start >/dev/null || test_fail
+fi
+unset TEST_NAME
 
 # Now we are able to check key rotation.
 
-printf -- '[  %s✔%s ] Integration test was successful, keys are rotated correctly!\n' "${GREEN}" "${NORMAL}"
+printf -- '[ %s✔%s ] Integration test was successful, keys are rotated correctly!\n' "${GREEN}" "${NORMAL}"
 exit 0

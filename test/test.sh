@@ -53,6 +53,6 @@ test_ok()
 # Print red x mark for unsuccessful test and exit with catchall error code.
 test_fail()
 {
-  printf -- '%s✘%s\nTest %s failed!\n' "${RED}" "${NORMAL}" $(basename -- "${0}" '.sh')
+  printf -- '\n[ %s✘%s ] %s failed!\n\n' "${RED}" "${NORMAL}" $(basename -- "${TEST_NAME:=${0}}" '.sh')
   exit 1
 }
