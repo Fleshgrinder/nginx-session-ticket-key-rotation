@@ -55,6 +55,10 @@ GROUP := ${USER}
 # ------------------------------------------------------------------------------
 
 
+# Ensure make doesn't think these targets are up-to-date because of an existing
+# directory.
+.PHONY: test
+
 # Mainly useful for testing.
 all:
 	clear
@@ -63,16 +67,19 @@ all:
 
 # Clean everything and change repository owner back to default.
 clean:
-	sudo sh uninstall.sh -v
-	sudo chown -R ${USER}:${GROUP} .
+	sh uninstall.sh -v
+	chown -R -- ${USER}:${GROUP} .
+	chmod -R -- 0755 .
+	find . -type f -exec chmod -- 0644 {} \;
+	find . -name '*.sh' -type f -exec chmod -- 0744 {} \;
 
 # Install TLS session ticket key rotation for defined servers.
 install:
-	sudo sh install.sh -v $(SERVER_NAMES)
+	sh install.sh -v $(SERVER_NAMES)
 
 # Rotate existing TLS session ticket keys for defined servers.
 rotate:
-	sudo sh generator.sh -v $(SERVER_NAMES)
+	sh generator.sh -v $(SERVER_NAMES)
 
 # Execute all unit tests and final integration test.
 test:
