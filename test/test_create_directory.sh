@@ -50,4 +50,4 @@ create_directory "${TEST_DIR}" 'root' && test_ok || test_fail
 [ -d "${TEST_DIR}" ] && test_ok || test_fail
 [ $(find "${TEST_DIR}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
 [ $(find "${TEST_DIR}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%m') -eq 770 ] && test_ok || test_fail
+[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%m') -eq 550 ] && test_ok || test_fail

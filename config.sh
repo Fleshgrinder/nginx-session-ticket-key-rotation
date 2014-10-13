@@ -232,7 +232,7 @@ least version ${YELLOW}${2}${NORMAL}"
 create_directory()
 {
   mkdir -p -- "${1}" || return 1
-  chmod -- 0770 "${1}" || return 1
+  chmod -- 0550 "${1}" || return 1
   chown -- "${2}":"${2}" "${1}" || return 1
   ok "Created directory ${YELLOW}${1}${NORMAL}"
 }

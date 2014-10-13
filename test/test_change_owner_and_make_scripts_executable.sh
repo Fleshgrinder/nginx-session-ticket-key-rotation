@@ -55,10 +55,10 @@ trap -- "rm -rf ${TEST_DIR}" 0 1 2 3 6 9 14 15
 change_owner_and_make_scripts_executable "${TEST_DIR}" 'root' && test_ok || test_fail
 [ $(find "${TEST_DIR}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
 [ $(find "${TEST_DIR}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%m') -eq 770 ] && test_ok || test_fail
+[ $(find "${TEST_DIR}" -maxdepth 0 -printf '%m') -eq 755 ] && test_ok || test_fail
 [ $(find "${TEST_FILE}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
 [ $(find "${TEST_FILE}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_FILE}" -maxdepth 0 -printf '%m') -eq 660 ] && test_ok || test_fail
+[ $(find "${TEST_FILE}" -maxdepth 0 -printf '%m') -eq 644 ] && test_ok || test_fail
 [ $(find "${TEST_SCRIPT}" -maxdepth 0 -printf '%u') = 'root' ] && test_ok || test_fail
 [ $(find "${TEST_SCRIPT}" -maxdepth 0 -printf '%g') = 'root' ] && test_ok || test_fail
-[ $(find "${TEST_SCRIPT}" -maxdepth 0 -printf '%m') -eq 770 ] && test_ok || test_fail
+[ $(find "${TEST_SCRIPT}" -maxdepth 0 -printf '%m') -eq 744 ] && test_ok || test_fail
