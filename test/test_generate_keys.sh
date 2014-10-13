@@ -40,11 +40,31 @@ WD=$(cd -- $(dirname -- "${0}"); pwd)
 mkdir -p -- "${KEY_PATH}"
 trap -- "rm -rf ${KEY_PATH}" 0 1 2 3 6 9 14 15
 
+# Test key generation if no keys exist.
 generate_keys 'example.com' 'localhost' && test_ok || test_fail
 for SERVER_NAME in 'example.com' 'localhost'
 do
   for KEY in 1 2 3
   do
     [ -f "${KEY_PATH}/${SERVER_NAME}.${KEY}.key" ] && test_ok || test_fail
+  done
+done
+
+# Backup old keys.
+for SERVER_NAME in 'example.com' 'localhost'
+do
+  for KEY in 1 2
+  do
+    cp -- "${KEY_PATH}/${SERVER_NAME}.${KEY}.key" "${KEY_PATH}/${SERVER_NAME}.$(( ${KEY} + 1 )).bak"
+  done
+done
+
+# Test key rotation if keys exist.
+generate_keys 'example.com' 'localhost' && test_ok || test_fail
+for SERVER_NAME in 'example.com' 'localhost'
+do
+  for KEY in 2 3
+  do
+    diff -- "${KEY_PATH}/${SERVER_NAME}.${KEY}.key" "${KEY_PATH}/${SERVER_NAME}.${KEY}.bak" && test_ok || test_fail
   done
 done

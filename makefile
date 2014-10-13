@@ -63,7 +63,7 @@ GROUP := ${USER}
 all:
 	clear
 	make test
-	make integration
+	make nginx_integration_test
 	-make install
 	make clean
 
@@ -80,8 +80,9 @@ install:
 	sh install.sh -v $(SERVER_NAMES)
 
 # Execute the integration test.
-integration:
-	sh test/integration_test.sh
+nginx_integration_test:
+	rm -f test/nginx.log
+	sh test/nginx_integration_test.sh
 
 # Rotate existing TLS session ticket keys for defined servers.
 rotate:

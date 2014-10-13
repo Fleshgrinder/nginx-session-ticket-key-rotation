@@ -48,7 +48,7 @@ cat << EOT > "${EXPECTED}"
 # ------------------------------------------------------------------------------
 
 0 0,12 * * * sh -- '${WD}' example.com localhost
-30 0,12 * * * service nginx reload
+30 0,12 * * * service nginx restart
 
 EOT
 

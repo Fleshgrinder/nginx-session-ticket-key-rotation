@@ -60,6 +60,6 @@ fi
 super_user
 
 # Generate keys for all passed servers.
-generate_keys ${@}
+generate_keys "${@}"
 
 exit 0

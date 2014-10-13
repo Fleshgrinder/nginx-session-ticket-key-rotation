@@ -49,12 +49,12 @@
 # than 24 hours for the encrypt key.
 readonly KEY_ROTATION='0 0,12 * * *'
 
-# The nginx restart interval as cron mask.
+# The nginx rotation interval as cron mask.
 #
 # This should be after the keys have been rotated (see $KEY_ROTATION). Note
-# that keys are only in-use after nginx has been restarted. This is very
-# important if you're syncing the keys within a cluster.
-readonly SERVER_RELOAD='30 0,12 * * *'
+# that keys are only in-use after nginx has read them. This is very important if
+# you're syncing the keys within a cluster.
+readonly SERVER_ROTATION='30 0,12 * * *'
 
 # Absolute path to the web server system startup program.
 readonly SERVER_INIT_PATH='/etc/init.d/nginx'
@@ -165,11 +165,11 @@ change_owner_and_make_scripts_executable()
 #  1 - Not available
 check_filesystem()
 {
-  if grep -qs ramfs "${1}"
+  if grep -q ramfs "${1}"
   then
     FILESYSTEM='ramfs'
     ok "Using ${YELLOW}ramfs${NORMAL}"
-  elif grep -qs tmpfs "${1}"
+  elif grep -q tmpfs "${1}"
   then
     FILESYSTEM='tmpfs'
     warn "Using ${YELLOW}tmpfs${NORMAL} which means that your keys \
@@ -289,7 +289,7 @@ least version ${YELLOW}${2}${NORMAL}"
 #
 # GLOBALS:
 #  $KEY_ROTATION - The key rotation cron mask.
-#  $SERVER_RELOAD - The server reload cron mask.
+#  $SERVER_ROTATION - The server rotation cron mask.
 #  $SERVER - The name of the server daemon.
 # ARGS:
 #  $1 - Absolute path to the cron file.
@@ -308,7 +308,7 @@ create_cron_job()
 # ------------------------------------------------------------------------------
 
 ${KEY_ROTATION} sh -- '${2}' ${3}
-${SERVER_RELOAD} service ${SERVER} reload
+${SERVER_ROTATION} service ${SERVER} reload
 
 EOT
   ok "Created cron rotation job ${YELLOW}${1}${NORMAL}"
@@ -576,7 +576,7 @@ uninstall()
   [ "${VERBOSE}" = true ] && printf -- 'Uninstalling ...\n'
 
   INIT_NAME="${INIT_PATH##*/}"
-  if grep -qs -- " \$${INIT_NAME}" "${SERVER_INIT_PATH}"
+  if grep -q -- " \$${INIT_NAME}" "${SERVER_INIT_PATH}"
   then
     sed -i -- "s/ \$${INIT_NAME}//g" "${SERVER_INIT_PATH}"
     ok "Removed system startup dependency in ${YELLOW}${SERVER_INIT_PATH}${NORMAL}"
@@ -603,7 +603,7 @@ uninstall()
     ok "Cron program ${YELLOW}${CRON_PATH}${NORMAL} already removed"
   fi
 
-  if grep -qs -- "${FSTAB_COMMENT}" /etc/fstab
+  if grep -q -- "${FSTAB_COMMENT}" /etc/fstab
   then
     sed -i -- "/${FSTAB_COMMENT}/,+1 d" '/etc/fstab'
     ok "Removed ${YELLOW}/etc/fstab${NORMAL} entry"
@@ -611,7 +611,7 @@ uninstall()
     ok "No entry found in ${YELLOW}/etc/fstab${NORMAL}"
   fi
 
-  if grep -qs -- "${KEY_PATH}" /proc/mounts
+  if grep -q -- "${KEY_PATH}" /proc/mounts
   then
     umount -fl -- "${KEY_PATH}"
     ok "Unmounted ${YELLOW}${KEY_PATH}${NORMAL}"
@@ -631,14 +631,14 @@ uninstall()
   return 0
 }
 
-# Display usage text.
+# Print usage text.
 #
 # GLOBAL:
 #  $ARGUMENTS - Program argument description.
 #  $DESCRIPTION - Description what the program does.
 # RETURN:
-#  0 - If usage was printed to `stdout`.
-#  1 - If printing failed.
+#  0 - Printing successful.
+#  1 - Printing failed.
 usage()
 {
   cat << EOT
