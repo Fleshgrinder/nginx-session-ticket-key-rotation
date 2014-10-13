@@ -20,6 +20,19 @@ or by issuing `make test`.
 
 You can safely delete the test directory if you don't want to waste disk space.
 
+### Coding Standard
+The program should be as POSIX compliant as possible and everything was tested
+with the dash interpreter. Note that I prefer to use quotes around most strings
+because developers are used to do so in almost all other languages. Also note
+that there is a special dash bug related to closing `stdout` which is why I had
+to redirect `stdout` to `/dev/null` instead of directly closing it. The return
+values are always documented for each function, often that returned value is
+implicit returned by another called function. So you won't find a `return`
+statement in each function.
+
+The best place for information on POSIX is [The Open Group Base Specifications]
+(http://pubs.opengroup.org/onlinepubs/9699919799/nframe.html).
+
 ## License
 > This is free and unencumbered software released into the public domain.
 >
