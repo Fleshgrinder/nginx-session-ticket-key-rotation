@@ -36,3 +36,15 @@
 
 WD=$(cd -- $(dirname -- "${0}"); pwd)
 . "${WD}/test.sh"
+
+mkdir -p -- "${KEY_PATH}"
+trap -- "rm -rf ${KEY_PATH}" 0 1 2 3 6 9 14 15
+
+generate_keys 'example.com' 'localhost' && test_ok || test_fail
+for SERVER_NAME in 'example.com' 'localhost'
+do
+  for KEY in 1 2 3
+  do
+    [ -f "${KEY_PATH}/${SERVER_NAME}.${KEY}.key" ] && test_ok || test_fail
+  done
+done

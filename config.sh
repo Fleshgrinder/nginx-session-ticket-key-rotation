@@ -412,6 +412,8 @@ generate_key()
 
 # Generate random keys for all servers.
 #
+# GLOBALS:
+#  $KEY_PATH - Absolute path to the directory where the keys should be stored.
 # ARGS:
 #  $@ - The server names to generate keys for.
 # RETURN:
