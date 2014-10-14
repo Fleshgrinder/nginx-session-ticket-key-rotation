@@ -13,7 +13,33 @@ git clone https://github.com/Fleshgrinder/nginx-session-ticket-key-rotation.git
 sh nginx-session-ticket-key-rotation/install.sh example.com localhost
 ```
 
-> Note that the program was only tested on Debian.
+This would install TLS session ticket rotation for `example.com` and `localhost`.
+You have to edit your nginx configuration yourself afterwards, a minimal
+configuration with the default ticket lifetime of my installation for `localhost`
+would look like the following example.
+
+```
+http {
+  server {
+    listen                     443 ssl;
+    server_name                localhost;
+    ssl_certificate            cert.pem;
+    ssl_certificate_key        cert.key;
+    ssl_ciphers                HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers  on;
+    ssl_session_timeout        36h;
+    ssl_session_ticket_key     ${KEY_PATH}/localhost.1.key;
+    ssl_session_ticket_key     ${KEY_PATH}/localhost.2.key;
+    ssl_session_ticket_key     ${KEY_PATH}/localhost.3.key;
+  }
+}
+```
+
+To uninstall the rotation mechanism simply execute the `uninstall.sh` script.
+
+```
+sh nginx-session-ticket-key-rotation/uninstall.sh
+```
 
 ### Tests
 The repository includes unit tests for most functions and an integration test.
