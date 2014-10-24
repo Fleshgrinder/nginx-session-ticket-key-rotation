@@ -47,6 +47,9 @@
 # Default is 12 hours which means that a key will reside in memory for 36 hours
 # before it's deleted (three keys are used). You shouldn't go for much more
 # than 24 hours for the encrypt key.
+#
+# The ticket's lifetime should be set to twice the lifetime of the encryption
+# key.
 readonly KEY_ROTATION='0 0,12 * * *'
 
 # The nginx rotation interval as cron mask.

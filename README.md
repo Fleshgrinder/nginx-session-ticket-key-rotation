@@ -35,7 +35,7 @@ http {
     ssl_certificate_key        cert.key;
     ssl_ciphers                HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers  on;
-    ssl_session_timeout        36h;
+    ssl_session_timeout        24h;
     ssl_session_ticket_key     /mnt/session_ticket_keys/localhost.1.key;
     ssl_session_ticket_key     /mnt/session_ticket_keys/localhost.2.key;
     ssl_session_ticket_key     /mnt/session_ticket_keys/localhost.3.key;
