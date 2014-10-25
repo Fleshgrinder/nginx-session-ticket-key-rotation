@@ -101,7 +101,8 @@ change_owner_and_make_scripts_executable "${WD}" 'root'
 create_directory "${KEY_PATH}" 'root'
 
 # Not all options have an effect if the preferred `ramfs` file system is used.
-readonly FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,noexec,nosuid,rw,size=${#}m"
+readonly FILESYSTEM_OPTIONS="async,mode=770,noauto,noatime,nodev,nodiratime,"`
+  `"noexec,nosuid,rw,size=${#}m"
 mount_filesystem "${FILESYSTEM}" "${FILESYSTEM_OPTIONS}" "${KEY_PATH}"
 add_fstab_entry "${FILESYSTEM}" "${FILESYSTEM_OPTIONS}" "${KEY_PATH}" '/etc/fstab'
 create_cron_job "${CRON_PATH}" "${WD}/generator.sh" "$(echo ${@})"
