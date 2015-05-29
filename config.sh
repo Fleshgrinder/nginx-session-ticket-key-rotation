@@ -267,9 +267,15 @@ check_server_version()
   #   Server built:   Jul 09 2014 07:22:45
   SERVER_VERSION=$("${1}" -v 2>&1 | head -n1)
 
-  # nginx: nginx version: nginx/1.7.6
-  # httpd: Server version: Apache/2.4.10
+  # nginx: nginx version: nginx/1.7.6 (Ubuntu)
+  # httpd: Server version: Apache/2.4.10 (Ubuntu)
   SERVER_VERSION="${SERVER_VERSION##*/}" # Remove longest match slash.
+  # nginx: 1.7.6 (Ubuntu)
+  # httpd: 2.4.10 (Ubuntu)
+  
+  # nginx: 1.7.6 (Ubuntu)
+  # httpd: 2.4.10 (Ubuntu)
+  SERVER_VERSION="${SERVER_VERSION%% *}" # Remove longest match space.
   # nginx: 1.7.6
   # httpd: 2.4.10
 
