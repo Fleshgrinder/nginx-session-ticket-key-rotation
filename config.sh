@@ -428,18 +428,7 @@ fail()
 
 # Generate (48 byte) random session ticket key.
 #
-# We use OpenSSL to generate the random data if available and fallback to dd and
-# /dev/urandom if it's not available. Note that we use the unblocking device and
-# may risk that the random data isn't that random after all. But don't forget
-# that we generate volatile keys and not long lived ones, therefore it shouldn't
-# be a problem. Having a blocking device on the other hand could become a huge
-# problem if we try to start the server daemon and no keys are present.
-#
 # LINK: http://pubs.opengroup.org/onlinepubs/9699919799/utilities/dd.html#tag_20_31
-# GLOBAL:
-#  $RANDOM_COMMAND - Set in order to check only once for the available commands
-#    and reused during subsequent calls to this function. The variable contains
-#    either `openssl` or `dd`.
 # ARGS:
 #  $1 - Absolute path to the key file.
 # RETURN:
@@ -447,22 +436,7 @@ fail()
 #  1 - If key generation failed.
 generate_key()
 {
-  if [ -z "${RANDOM_COMMAND}" ]
-  then
-    if type openssl >/dev/null 2>&1
-    then
-      RANDOM_COMMAND='openssl'
-    else
-      RANDOM_COMMAND='dd'
-    fi
-  fi
-
-  if [ "${RANDOM_COMMAND}" = 'openssl' ]
-  then
-    openssl rand 48 >"${1}" || return 1
-  else
-    dd 'if=/dev/urandom' "of=${1}" 'bs=1' 'count=48' 2>/dev/null || return 1
-  fi
+  dd 'if=/dev/random' "of=${1}" 'bs=1' 'count=48' 2>/dev/null || return 1
 }
 
 # Generate random keys for all servers.
