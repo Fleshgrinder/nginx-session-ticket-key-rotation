@@ -91,4 +91,3 @@ rotate:
 # Execute all unit tests and final integration test.
 test:
 	sh test/all.sh
-	# TODO: Implement integration test!
